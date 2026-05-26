@@ -1,0 +1,10 @@
+NAME,SMILES
+Benzaldehyde,c1ccccc1C=O
+4-Methoxybenzaldehyde,COc1ccc(C=O)cc1
+4-Nitrobenzaldehyde,O=Cc1ccc([N+](=O)[O-])cc1
+4-Chlorobenzaldehyde,O=Cc1ccc(Cl)cc1
+Cinnamaldehyde_E,O=C/C=C/c1ccccc1
+Furfural,O=Cc1ccco1
+2-Naphthaldehyde,C1=CC=C2C=CC=CC2=C1C=O
+3-Pyridinecarboxaldehyde,O=Cc1cccnc1
+Salicylaldehyde,Oc1ccccc1C=O

@@ -1,0 +1,145 @@
+name: build-and-release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Miniconda (conda-forge)
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          auto-update-conda: true
+          miniforge-variant: Miniforge3
+          miniforge-version: latest
+          use-mamba: true
+          python-version: "3.11"
+          channels: conda-forge
+          channel-priority: strict
+
+      - name: Install dependencies
+        shell: bash -l {0}
+        run: |
+          mamba install -y rdkit pandas pillow pyinstaller pytest
+          python -m pip install --upgrade pip
+          python -m pip install customtkinter matplotlib numpy
+
+      - name: Run tests
+        shell: bash -l {0}
+        run: |
+          pytest -q
+
+      - name: Build (PyInstaller)
+        shell: bash -l {0}
+        run: |
+          python scripts/generate_icons.py
+          pyinstaller --clean --noconfirm mcrg.spec
+
+      - name: Smoke test app bundle (macOS)
+        if: runner.os == 'macOS'
+        shell: bash -l {0}
+        run: |
+          chmod +x scripts/smoke_test_mac_app.sh
+          scripts/smoke_test_mac_app.sh "dist/Moleku.app"
+
+      - name: Package artifact (Windows zip)
+        if: runner.os == 'Windows'
+        shell: bash -l {0}
+        run: |
+          cd dist
+          7z a "Moleku-${{ runner.os }}.zip" "Moleku"
+
+      - name: (Optional) Codesign + notarize (macOS)
+        if: runner.os == 'macOS' && env.MACOS_SIGN_IDENTITY != ''
+        shell: bash -l {0}
+        env:
+          MACOS_SIGN_IDENTITY: ${{ secrets.MACOS_SIGN_IDENTITY }}
+          MACOS_CERT_P12: ${{ secrets.MACOS_CERT_P12 }}
+          MACOS_CERT_PASSWORD: ${{ secrets.MACOS_CERT_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          # Import signing cert (base64-encoded .p12)
+          if [[ -n "${MACOS_CERT_P12}" ]]; then
+            echo "$MACOS_CERT_P12" | base64 --decode > /tmp/mcrg_cert.p12
+            security create-keychain -p "" build.keychain
+            security default-keychain -s build.keychain
+            security unlock-keychain -p "" build.keychain
+            security import /tmp/mcrg_cert.p12 -k build.keychain -P "${MACOS_CERT_PASSWORD}" -T /usr/bin/codesign
+            security set-key-partition-list -S apple-tool:,apple: -s -k "" build.keychain
+          fi
+
+          # Codesign app bundle (hardened runtime); PyInstaller writes dist/Moleku.app
+          /usr/bin/codesign --force --options runtime --deep --sign "${MACOS_SIGN_IDENTITY}" "dist/Moleku.app"
+          /usr/bin/codesign --verify --deep --strict --verbose=2 "dist/Moleku.app"
+
+          # Notarize + staple (requires Xcode tools)
+          if [[ -n "${APPLE_ID}" && -n "${APPLE_APP_SPECIFIC_PASSWORD}" && -n "${APPLE_TEAM_ID}" ]]; then
+            xcrun notarytool submit "dist/Moleku.app" --apple-id "${APPLE_ID}" --password "${APPLE_APP_SPECIFIC_PASSWORD}" --team-id "${APPLE_TEAM_ID}" --wait
+            xcrun stapler staple "dist/Moleku.app"
+          fi
+
+      - name: Package artifact (macOS zip)
+        if: runner.os == 'macOS'
+        shell: bash -l {0}
+        run: |
+          cd dist
+          ditto -c -k --sequesterRsrc --keepParent "Moleku.app" "Moleku-${{ runner.os }}.zip"
+
+      - name: Package artifact (Linux zip)
+        if: runner.os == 'Linux'
+        shell: bash -l {0}
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y zip curl
+          cd dist
+          zip -r "Moleku-${{ runner.os }}.zip" "Moleku"
+
+      - name: Build AppImage (Linux)
+        if: runner.os == 'Linux'
+        shell: bash -l {0}
+        run: |
+          chmod +x scripts/build_appimage.sh
+          scripts/build_appimage.sh
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Moleku-${{ runner.os }}
+          path: |
+            dist/Moleku-${{ runner.os }}.zip
+            dist/Moleku-Linux.AppImage
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/**/Moleku-Windows.zip
+            artifacts/**/Moleku-macOS.zip
+            artifacts/**/Moleku-Linux.zip
+            artifacts/**/Moleku-Linux.AppImage
+

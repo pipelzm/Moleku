@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mcr-g"
+version = "1.0.0"
+description = "Moleku (formerly MCR-G) — Multi Component Reaction Generator (desktop GUI)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
+authors = [{ name = "Felipe Lizama Mora" }]
+
+# NOTE:
+# RDKit is not reliably installable via pip across OSes.
+# For development, prefer conda-forge (see TROUBLESHOOTING.md).
+dependencies = []
+
+[project.optional-dependencies]
+gui = [
+  "customtkinter>=5.2",
+  "pillow",
+  "pandas",
+]
+
+[tool.setuptools]
+py-modules = ["mcrg_desktop"]
+packages = ["mcrg"]
+

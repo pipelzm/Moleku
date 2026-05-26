@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+title: "Moleku"
+message: "If you use Moleku in academic work, please cite this software."
+type: software
+authors:
+  - given-names: "Felipe"
+    family-names: "Lizama Mora"
+version: "1.0.0"
+date-released: "2026-05-26"
+repository-code: "https://github.com/pipelzm/Moleku"
+license: "Apache-2.0"
+abstract: "Desktop platform for virtual library generation via multi-component reactions, integrated local ADMET screening, and research-ready export workflows."
+keywords:
+  - cheminformatics
+  - multi-component reactions
+  - virtual library generation
+  - computer-aided drug design
+  - drug discovery
+  - ADMET
+  - rdkit

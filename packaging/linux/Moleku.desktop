@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Moleku
+Comment=Multi Component Reaction Generator
+Exec=Moleku
+Icon=moleku_simple_icon
+Terminal=false
+Categories=Science;Education;

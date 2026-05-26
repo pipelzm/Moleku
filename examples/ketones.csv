@@ -1,0 +1,10 @@
+NAME,SMILES
+Cyclohexanone,O=C1CCCCC1
+Cyclopentanone,O=C1CCCC1
+Acetone,CC(C)=O
+2-Butanone,CCC(C)=O
+Acetophenone,O=C(C)c1ccccc1
+4-Methylcyclohexanone,CC1CCC(=O)CC1
+2-Methylcyclohexanone,CC1CCCCC1=O
+Tetrahydro-4H-pyran-4-one,O=C1CCOCC1
+1-Tetralone,O=C1CCCc2ccccc21
