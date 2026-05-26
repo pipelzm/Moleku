@@ -14,13 +14,26 @@ import os, sys, io, itertools, zipfile, threading, math, webbrowser, random, tim
 from pathlib import Path
 from collections import defaultdict
 # ── TKINTER ──────────────────────────────────────────────
-import tkinter as tk
-from tkinter import filedialog, messagebox, simpledialog, colorchooser
-from tkinter import ttk
-from tkinter import (END, DISABLED, NORMAL, BOTH, LEFT, RIGHT,
-                     TOP, BOTTOM, X, Y, W, E, N, S, NW,
-                     HORIZONTAL, VERTICAL, CENTER, WORD, FLAT,
-                     StringVar, BooleanVar, DoubleVar, IntVar)
+try:
+    import tkinter as tk
+    from tkinter import filedialog, messagebox, simpledialog, colorchooser
+    from tkinter import ttk
+    from tkinter import (END, DISABLED, NORMAL, BOTH, LEFT, RIGHT,
+                         TOP, BOTTOM, X, Y, W, E, N, S, NW,
+                         HORIZONTAL, VERTICAL, CENTER, WORD, FLAT,
+                         StringVar, BooleanVar, DoubleVar, IntVar)
+    _TK_READY = True
+except Exception:
+    tk = None
+    filedialog = messagebox = simpledialog = colorchooser = None
+    ttk = None
+    END = "end"; DISABLED = "disabled"; NORMAL = "normal"
+    BOTH = "both"; LEFT = "left"; RIGHT = "right"
+    TOP = "top"; BOTTOM = "bottom"; X = "x"; Y = "y"
+    W = "w"; E = "e"; N = "n"; S = "s"; NW = "nw"
+    HORIZONTAL = "horizontal"; VERTICAL = "vertical"; CENTER = "center"; WORD = "word"; FLAT = "flat"
+    StringVar = BooleanVar = DoubleVar = IntVar = None
+    _TK_READY = False
 try:
     import customtkinter as ctk
     ctk.set_appearance_mode("dark")
@@ -594,6 +607,11 @@ class MCRGApp:
     # v1.0 core: no Chemical Space tab (future pack)
     TAB_IDS = ["motor", "resultados", "admet", "guide", "acerca"]
     def __init__(self):
+        if not _TK_READY:
+            raise RuntimeError(
+                "Tkinter is not available in this Python environment. "
+                "Install Tk support or use the packaged Moleku application."
+            )
         self.root = ctk.CTk() if HAS_CTK else tk.Tk()
         self.root.title("Moleku v1.0"); self.root.geometry("950x700"); self.root.minsize(800, 600)
         self.root.configure(bg=CL["bg"])
