@@ -4,7 +4,6 @@
 |---|---|
 | **Documentation** | ![docs](https://img.shields.io/badge/docs-passing-brightgreen) |
 | **CI** | ![ci](https://github.com/pipelzm/Moleku/actions/workflows/ci.yml/badge.svg) |
-| **Builds** | ![release](https://img.shields.io/github/v/release/pipelzm/Moleku/releases) |
 | **Dependencies** | ![rdkit](https://img.shields.io/badge/powered%20by-RDKit-4c8bf5) |
 | **License** | ![license](https://img.shields.io/badge/license-Apache--2.0-blue) |
 
