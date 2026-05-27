@@ -4,7 +4,7 @@
 |---|---|
 | **Documentation** | ![docs](https://img.shields.io/badge/docs-passing-brightgreen) |
 | **CI** | ![ci](https://github.com/pipelzm/Moleku/actions/workflows/ci.yml/badge.svg) |
-| **Releases** | [![release](https://img.shields.io/github/v/release/pipelzm/Moleku)](https://github.com/pipelzm/Moleku/releases)
+| **Releases** | [![release](https://img.shields.io/github/v/release/pipelzm/Moleku)](https://github.com/pipelzm/Moleku/releases/tag/releases)
 | **Dependencies** | ![rdkit](https://img.shields.io/badge/powered%20by-RDKit-4c8bf5) ![pandas](https://img.shields.io/badge/powered%20by-pandas-150458) ![NumPy](https://img.shields.io/badge/powered%20by-NumPy-013243) ![admet-ai](https://img.shields.io/badge/ADMET-admet--ai-6a00ff) ![Chemprop](https://img.shields.io/badge/ML-Chemprop-6c757d) |
 | **License** | ![license](https://img.shields.io/badge/license-Apache--2.0-blue) |
 
