@@ -639,7 +639,7 @@ class MCRGApp:
             "admet_local": True,
             "export_zip_3d": True,
         }
-        self.feedback_url = "https://github.com/pipelzm/mcrg_beta/issues"
+        self.feedback_url = "https://mlkfeed.framer.website"
         
         self.file_paths = {}; self.file_svars = {}
         self.df_all = None; self.df_ideal = None
