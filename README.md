@@ -1,5 +1,15 @@
 # Moleku
 
+## Project status
+
+| Category | Status |
+|---|---|
+| **Documentation** | ![docs](https://img.shields.io/badge/docs-passing-brightgreen) |
+| **CI** | ![ci](https://github.com/pipelzm/Moleku/actions/workflows/ci.yml/badge.svg) |
+| **Builds** | ![release](https://img.shields.io/github/v/release/pipelzm/Moleku?include_prereleases=false) |
+| **Dependencies** | ![rdkit](https://img.shields.io/badge/powered%20by-RDKit-4c8bf5) |
+| **License** | ![license](https://img.shields.io/badge/license-Apache--2.0-blue) |
+
 Moleku is a desktop platform for virtual library generation through multi-component reactions (MCRs), early-stage candidate prioritization, integrated local ADMET analysis, and export of research-ready datasets for medicinal chemistry and computational drug discovery workflows.
 
 > The codebase keeps the historical `mcrg` package name and the `mcrg_desktop.py`
