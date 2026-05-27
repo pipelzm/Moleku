@@ -1,7 +1,5 @@
 # Moleku
 
-## Project status
-
 | Category | Status |
 |---|---|
 | **Documentation** | ![docs](https://img.shields.io/badge/docs-passing-brightgreen) |
