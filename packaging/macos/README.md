@@ -12,6 +12,12 @@ Two macOS variants can be produced:
 Use the dedicated build environment and PyInstaller spec:
 
 ```bash
+PYTHON=/opt/anaconda3/envs/mcrg-build/bin/python bash "scripts/build_mac_app.sh"
+```
+
+The script also auto-detects the `mcrg-build` conda environment when it exists, so the older command below is accepted as well:
+
+```bash
 conda run -n mcrg-build env PYTHON=python bash "scripts/build_mac_app.sh"
 ```
 

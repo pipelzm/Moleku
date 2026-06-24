@@ -1,3 +1,4 @@
+import json
 import zipfile
 
 import pytest
@@ -26,16 +27,27 @@ class _Var:
 @pytest.mark.skipif(not _has_rdkit_and_pandas(), reason="rdkit+pandas required for zip export contracts")
 def test_paper_dataset_zip_contract(tmp_path):
     import pandas as pd
+    import mcrg_desktop as m
     from mcrg_desktop import MCRGApp
+    m._load_heavy()
 
     df = pd.DataFrame(
         [
-            {
-                "SMILES_Final": "O=Cc1ccccc1",
+                {
+                    "SMILES_Final": "CCN",
                 "Classification": "Ideal",
+                "Review_Status": "Ideal",
                 "Compatibility_%": 88.0,
                 "InChIKey": "",
                 "Failure_Reason": "",
+            },
+            {
+                "SMILES_Final": "CCO",
+                "Classification": "Discarded",
+                "Review_Status": "Warning",
+                "Compatibility_%": 10.0,
+                "InChIKey": "",
+                "Failure_Reason": "Below threshold (50.0)",
             }
         ]
     )
@@ -43,7 +55,7 @@ def test_paper_dataset_zip_contract(tmp_path):
     class Fake:
         df_all = df
         lang_var = _Var("English")
-        _last_run_context = {"mcr": "Biginelli (3-CR)", "threshold": 50.0, "ideal_rule": "Lipinski"}
+        _last_run_context = {"mcr": "Biginelli (3-CR)", "threshold": 50.0, "ideal_rule": "Lipinski", "standardize": True}
 
         # minimal i18n helpers used by schema export
         def _col_label(self, c):
@@ -67,6 +79,11 @@ def test_paper_dataset_zip_contract(tmp_path):
         assert "env/python_env.json" in names
         assert "env/pip_freeze.txt" in names
         assert "paper_manifest.json" in names
+        manifest = json.loads(zf.read("paper_manifest.json").decode("utf-8"))
+        assert manifest["ideal_rule"] == "Lipinski"
+        assert manifest["standardize"] is True
+        sdf_text = zf.read("tables/results.sdf").decode("utf-8", errors="ignore")
+        assert "Below threshold (50.0)" in sdf_text
 
 
 @pytest.mark.skipif(not _has_rdkit_and_pandas(), reason="rdkit+pandas required for zip export contracts")
@@ -112,4 +129,3 @@ def test_custom_zip_figures_only_contract(tmp_path):
         names = set(zf.namelist())
         assert "figures/sentinel.txt" in names
         assert "custom_zip_manifest.json" in names
-

@@ -77,7 +77,7 @@ PLOT_DESC = {
 # NOTE: Keep keys stable; many UI elements use `t(key)` lookups.
 LOCALES = {
     "Español": {
-        "titulo": "Moleku v1.0", "tab_motor": "Motor {rxn}", "tab_resultados": "Resultados",
+        "titulo": "Moleku v1.1.0", "tab_motor": "Motor {rxn}", "tab_resultados": "Resultados",
         "tab_espacio": "Espacio Químico", "tab_admet": "ADMET", "tab_acerca": "Sobre Nosotros", "tab_guide": "Guía",
         "feedback": "Feedback",
         "info_formato": "ℹ Formatos: .csv, .txt, .tsv, .xlsx, .xls, .ods, .json, .numbers  |  Columnas: NAME y SMILES",
@@ -122,6 +122,15 @@ LOCALES = {
         "export_3d_title": "Exportar ZIP 3D",
         "export_3d_msg": "Generando conformeros 3D. Puede tardar en datasets grandes.",
         "exportar_pdf": "Exportar PDF", "exportar_alta_calidad": "Exportar Alta Calidad", "no_datos": "Sin datos.",
+        "export_table": "Exportar tabla",
+        "export_table_title": "Exportar tabla de resultados",
+        "export_table_hint": "Elige qué grupo de resultados y qué formato deseas exportar.",
+        "export_scope": "Grupo de resultados",
+        "export_format": "Formato",
+        "export_format_csv": "CSV (.csv)",
+        "export_format_xlsx": "Sheets (.xlsx)",
+        "export_format_pdf": "PDF (.pdf)",
+        "export_scope_empty": "Ese grupo no tiene filas para exportar.",
         "admet_copy_sel": "Copiar SMILES (selección)",
         "admet_copy_ideal": "Copiar SMILES (Ideal)",
         "admet_open_web": "Abrir ADMET-IA (web)",
@@ -131,15 +140,19 @@ LOCALES = {
         "admet_missing_pkg": "Predicción local requiere el paquete 'admet-ai'.\n\nInstala:\n  pip install admet-ai",
         "admet_missing_pkg_app": "ADMET local no está disponible correctamente dentro de este ejecutable.\n\nUsa la compilación actualizada de Moleku o vuelve a generar la app incluyendo el runtime completo de ADMET.",
         "admet_results_title": "ADMET-IA — Predicciones",
-        "admet_export_csv": "Exportar ADMET (CSV)",
-        "admet_tab_hint": "Pega uno o varios SMILES en esta pestaña o carga directamente los candidatos Ideal desde Resultados para explorar sus predicciones ADMET locales como un buscador.",
+        "admet_export_csv": "Exportar ADMET",
+        "admet_export": "Exportar ADMET",
+        "admet_export_title": "Exportar tabla ADMET",
+        "admet_export_hint": "Elige qué candidatos ADMET analizados y qué formato deseas exportar.",
+        "admet_tab_hint": "Pega uno o varios SMILES en esta pestaña o carga directamente candidatos generados desde Resultados para explorar sus predicciones ADMET locales como un buscador.",
         "admet_tab_input_title": "Entrada de candidatos",
-        "admet_tab_input_hint": "Pega SMILES uno por línea, usa la barra para buscar candidatos ya calculados o importa automáticamente los candidatos Ideal generados por Moleku.",
+        "admet_tab_input_hint": "Pega SMILES uno por línea, usa la barra para buscar candidatos ya calculados o importa candidatos Ideal/Warning generados por Moleku.",
         "admet_info_title": "Guía rápida ADMET",
         "admet_info_hint": "Paneles rápidos para entender cómo cargar candidatos, cómo interpretar las salidas y cómo exportar subconjuntos útiles desde ADMET.",
         "admet_tab_run_input": "Generar desde SMILES",
         "admet_tab_use_visible": "Usar resultados visibles",
-        "admet_tab_use_ideal": "Usar resultados Ideal",
+        "admet_tab_use_ideal": "Usar resultados",
+        "admet_tab_use_results": "Usar resultados",
         "admet_tab_search": "Buscar candidato/SMILES:",
         "admet_tab_search_clear": "Limpiar",
         "admet_tab_results_count": "Candidatos analizados: {n} / {total}",
@@ -154,11 +167,12 @@ LOCALES = {
         "admet_tab_no_input_smiles": "Pega al menos un SMILES válido en el cuadro de ADMET.",
         "admet_tab_no_results_visible": "No hay candidatos visibles en Resultados para enviar a ADMET.",
         "admet_tab_no_ideal_results": "No hay candidatos Ideal disponibles para enviar a ADMET.",
+        "admet_tab_no_results_generated": "No hay candidatos Ideal/Warning generados con SMILES para enviar a ADMET.",
         "admet_tab_running": "Calculando ADMET local para {n} candidato(s)...",
         "admet_help_input_title": "Cómo cargar candidatos",
         "admet_help_input": (
             "• Puedes pegar SMILES directamente en el cuadro superior derecho, uno por línea.\n"
-            "• También puedes importar automáticamente los candidatos clasificados como Ideal desde Resultados.\n"
+            "• También puedes importar automáticamente candidatos Ideal/Warning desde Resultados.\n"
             "• Se aceptan líneas con solo SMILES o pares nombre/SMILES separados por tabulador, coma o punto y coma.\n"
             "• Las líneas que empiezan con '#' se ignoran como comentarios y los SMILES repetidos se deduplican antes de ejecutar ADMET.\n"
             "• La barra de búsqueda filtra los candidatos ya calculados por nombre o por SMILES, sin volver a ejecutar ADMET."
@@ -177,22 +191,29 @@ LOCALES = {
             "2) Ejecuta ADMET local desde esta pestaña.\n"
             "3) Usa la barra superior para moverte rápidamente entre candidatos ya calculados.\n"
             "4) Revisa la estructura 2D y contrasta sus salidas ADMET para priorizar mejor/peor perfil.\n"
-            "5) Exporta ADMET en CSV o un ZIP 3D eligiendo todos los Ideal o solo un subconjunto manual.\n"
+            "5) Exporta ADMET como CSV, Sheets o PDF; genera ZIP 3D desde la tabla de Resultados.\n"
             "6) Conserva los mejores candidatos para análisis más profundo o validación externa."
         ),
         "export_select_title_3d": "Seleccionar candidatos para ZIP 3D",
         "export_select_title_admet": "Seleccionar candidatos para exportar ADMET",
-        "export_select_hint": "Elige si deseas exportar todos los candidatos Ideal o seleccionar manualmente algunos candidatos concretos.",
+        "admet_select_title_results": "Seleccionar candidatos de Resultados para ADMET",
+        "admet_select_hint_results": "Elige candidatos Ideal, candidatos Ideal + Warning con SMILES, o selecciona manualmente un subconjunto.",
+        "admet_select_mode_ideal": "Usar todos los candidatos Ideal",
+        "admet_select_mode_generated": "Usar candidatos Ideal + Warning (con SMILES)",
+        "admet_select_mode_manual": "Seleccionar candidatos manualmente",
+        "export_select_hint": "Elige si deseas exportar todos los candidatos Ideal, Ideal + Warning con SMILES, o seleccionar manualmente un subconjunto.",
         "export_select_mode_ideal": "Exportar todos los candidatos Ideal",
+        "export_select_mode_generated": "Exportar Ideal + Warning (con SMILES)",
         "export_select_mode_manual": "Seleccionar manualmente algunos candidatos",
         "export_select_candidates": "Candidatos disponibles",
         "export_select_all": "Seleccionar todo",
         "export_select_clear": "Limpiar selección",
         "export_select_apply": "Exportar",
+        "export_select_apply_use": "Usar candidatos",
         "export_select_cancel": "Cancelar",
         "export_select_need_candidates": "No hay candidatos disponibles para exportar.",
         "export_select_need_manual": "Selecciona al menos un candidato para exportar.",
-        "filtro": "Filtro:", "ideal": "Ideal", "todos": "Todos", "descartado": "Descartado",
+        "filtro": "Filtro:", "ideal": "Ideal", "warning": "Warning", "error": "Error", "generated": "Generated", "todos": "Todos", "descartado": "Descartado",
         "table_view": "Vista tabla:",
         "table_view_custom": "Personalizada…",
         "table_cols_title": "Columnas visibles (tabla)",
@@ -235,9 +256,10 @@ LOCALES = {
             "- Los encabezados visibles se traducen según Español/English; los nombres de columna en CSV/export siguen siendo las claves internas (reproducibilidad).\n"
             "- 'Personalizada…' define columnas visibles incluso antes de tener datos (vista anticipada).\n"
             "\n"
-            "CLASIFICACIÓN (Ideal vs Discarded)\n"
+            "CLASIFICACIÓN (Ideal / Warning / Error)\n"
             "- Ideal: depende del 'Criterio Ideal' seleccionado en el motor (Lipinski / Ghose / Veber / Egan / Muegge / Any / All).\n"
-            "- Discarded: (a) el producto existe pero no cumple el criterio elegido (sigue visible SMILES_Final), o (b) no hubo producto / sanitización / reactivo inválido / umbral de score.\n"
+            "- Warning: existe producto con SMILES_Final, pero falla el criterio elegido o el umbral de score.\n"
+            "- Error: no se pudo generar un producto/SMILES válido o falló la reacción/sanitización.\n"
             "- Duplicados: Is_Duplicate y Duplicate_Of respecto al primer InChIKey repetido.\n"
             "\n"
             "¿POR QUÉ SE USAN ESTOS PARÁMETROS?\n"
@@ -250,11 +272,11 @@ LOCALES = {
             "- El slider de 'Score threshold' descarta resultados por debajo del umbral (aparecen como Discarded con motivo 'Below threshold').\n"
             "\n"
             "EXPORTACIONES (resumen)\n"
-            "- Bajo la tabla: CSV, Sheets y PDF; copiar SMILES (selección/Ideal) y enviar candidatos a ADMET local.\n"
-            "- NUEVO: CSV, Sheets y PDF ahora respetan el filtro activo de la tabla (Ideal / All / Discard), de modo que el archivo exportado contiene exactamente las filas visibles y no aparecen celdas en blanco. El nombre sugerido del archivo incluye el filtro (p. ej. mcrg_results_ideal.csv).\n"
-            "- ZIP 3D ahora se accede desde la pestaña ADMET; mantiene su lógica propia (solo exporta conformeros para compuestos clasificados como Ideal).\n"
+            "- Bajo la tabla: Exportar tabla (CSV/Sheets/PDF), Exportar ZIP 3D, copiar SMILES y enviar candidatos a ADMET local.\n"
+            "- Exportar tabla permite elegir Ideal / Warning / Error / Generated / Todos y el formato de salida.\n"
+            "- ZIP 3D exporta candidatos generados con SMILES (Ideal y Warning) mediante su propio selector.\n"
             "- ADMET (local) ejecuta predicciones offline y alimenta la pestaña ADMET con búsqueda/visualización integrada.\n"
-            "- En v1.0 (core), paquetes avanzados (Custom ZIP / bundles reproducibles / paper dataset / análisis extra) se liberan como plugins/packs.\n"
+            "- En v1.1.0 (core), paquetes avanzados (Custom ZIP / bundles reproducibles / paper dataset / análisis extra) se liberan como plugins/packs.\n"
             "\n"
             "Failure_Reason\n"
             "- Explica el motivo exacto del descarte (p.ej. 'No products generated', 'Sanitize failed', 'Invalid reactant', 'Fails <Rule>', 'Below threshold')."
@@ -267,20 +289,22 @@ LOCALES = {
             "4) (Opcional) Estandariza productos (desalado/neutralización).\n"
             "5) Cuando hay producto, calcula descriptores + compatibilidad (%) + reglas Pass_* + alertas MedChem.\n"
             "6) Calcula InChIKey y marca duplicados.\n"
-            "7) Clasifica Ideal/Discarded según el criterio elegido y registra Failure_Reason.\n"
-            "8) Resultados: filtra Ideal/Todos/Descartados; 'Personalizada…' para columnas; visor 2D al seleccionar fila.\n"
-            "9) Exporta según necesidad: CSV/XLSX/PDF/ZIP 3D.\n"
+            "7) Clasifica Ideal / Warning / Error según el criterio elegido y registra Failure_Reason.\n"
+            "8) Resultados: filtra Ideal / Warning / Error / Generated / Todos; 'Personalizada…' para columnas; visor 2D al seleccionar fila.\n"
+            "9) Exporta según necesidad: tabla CSV/XLSX/PDF o ZIP 3D.\n"
             "10) Para funciones avanzadas, usa los packs/plugins de próximas versiones."
         ),
-        "results_help_views_title": "¿Cómo interpretar Ideal / All / Discard?",
+        "results_help_views_title": "¿Cómo interpretar Ideal / Warning / Error?",
         "results_help_views": (
             "- Ideal: filas que cumplen el 'Criterio Ideal' activo en el motor (no solo Lipinski por defecto: puedes cambiar la regla).\n"
-            "- Discard: intentos fallidos o productos que no cumplen el criterio o el umbral de score; muchas filas conservan SMILES_Final para inspección.\n"
-            "- All: todos los intentos evaluados (Ideal + Discard), coherente con el contador Total de la corrida.\n"
+            "- Warning: estructuras generadas con SMILES_Final que no cumplen el criterio o umbral; revisarlas queda bajo responsabilidad del usuario.\n"
+            "- Error: intentos fallidos sin producto válido generado.\n"
+            "- Generated: todas las filas con SMILES_Final (Ideal + Warning).\n"
+            "- Todos: todos los intentos evaluados, coherente con el contador Total de la corrida.\n"
             "\n"
             "EXPORTACIÓN POR FILTRO\n"
-            "- CSV, Sheets (XLSX) y PDF exportan exactamente la vista activa (Ideal / All / Discard); por eso evita celdas en blanco si filtras antes de exportar.\n"
-            "- ZIP 3D no usa este filtro: se ejecuta desde la pestaña ADMET y siempre exporta solo los compuestos clasificados como Ideal (la generación 3D es costosa)."
+            "- Exportar tabla permite elegir grupo y formato explícitamente: CSV, Sheets (XLSX) o PDF.\n"
+            "- ZIP 3D usa su propio selector de candidatos y puede incluir estructuras Warning generadas con SMILES."
         ),
         "results_toggle_info_hide": "Ocultar paneles de info",
         "results_toggle_info_show": "Mostrar paneles de info",
@@ -295,7 +319,7 @@ LOCALES = {
         "saved": "Guardado:",
         "guide_title": "Guía de Uso — Moleku",
         "guide_text": (
-            "📘 BIENVENIDO A Moleku v1.0\n"
+            "📘 BIENVENIDO A Moleku v1.1.0\n"
             "──────────────────────────────\n"
             "Moleku es una plataforma de escritorio profesional para Diseño de Fármacos Asistido por Computadora (CADD), que permite la generación rápida de librerías virtuales mediante Reacciones Multicomponente (MCR).\n\n"
             "> PASO 1: PREPARAR ARCHIVOS DE ENTRADA\n"
@@ -310,26 +334,26 @@ LOCALES = {
             "    4-Nitrobenzaldehído,O=Cc1ccc([N+](=O)[O-])cc1\n"
             "    Cinamaldehído_E,O=C/C=C/c1ccccc1\n\n"
             "> PASO 2: SELECCIONAR REACCIÓN MCR\n"
-            "En Moleku v1.0 (core) están disponibles solo tres MCR de 3 componentes: Biginelli (3-CR), GBB (3-CR) y Gewald (3-CR). Ugi (4-CR) y el resto de reacciones no forman parte de esta versión. El panel de Vista Previa muestra el esquema, DOI y notas mecanísticas.\n"
+            "En Moleku v1.1.0 (core) están disponibles solo tres MCR de 3 componentes: Biginelli (3-CR), GBB (3-CR) y Gewald (3-CR). Ugi (4-CR) y el resto de reacciones no forman parte de esta versión. El panel de Vista Previa muestra el esquema, DOI y notas mecanísticas.\n"
             "⚗️ Para reacciones con componentes centrales fijos, use los checkboxes. Seleccione uno o varios para generar AUTOMÁTICAMENTE todas las variaciones combinatorias en una sola ejecución.\n\n"
             "> PASO 3: CONFIGURAR Y EJECUTAR\n"
             "Cargue un archivo por cada componente externo. Ajuste el umbral de Score (0–100%). Presione '▶ Iniciar generación virtual'.\n"
             "⚙️ El motor calcula el producto cartesiano, mapea SMARTS con RDKit y evalúa cada producto con scoring + reglas de drug-likeness (Lipinski/Ghose/Veber/Egan/Muegge).\n"
             "🧼 Opcional: active 'Estandarizar productos' para desalado/neutralización y deduplicación por InChIKey.\n\n"
             "> PASO 4: ANALIZAR RESULTADOS\n"
-            "Los resultados aparecen en 'Resultados'. Filtre por Ideal / Todos / Descartados. Haga clic en cualquier fila para ver la estructura 2D y propiedades.\n"
+            "Los resultados aparecen en 'Resultados'. Filtre por Ideal / Warning / Error / Generated / Todos. Haga clic en cualquier fila para ver la estructura 2D y propiedades.\n"
             "🧩 Use 'Personalizada…' para elegir qué columnas ver en la tabla (también sin datos, para preparar la vista).\n"
             "Los encabezados de la tabla respetan el idioma de la interfaz; los datos exportados mantienen nombres de columna estables.\n"
             "🧬 Quiralidad/estereoquímica: la tabla incluye Has_Stereo y el conteo de centros quirales (definidos/sin asignar) calculados desde SMILES_Final.\n"
-            "💾 Bajo la tabla: exporta CSV y Sheets, copia SMILES (selección / Ideal) y envía candidatos a la pestaña ADMET para análisis local.\n"
-            "🧠 La pestaña ADMET funciona como un buscador integrado: puedes pegar SMILES, importar candidatos Ideal, navegar entre compuestos con la búsqueda y revisar sus salidas locales sin abrir popups.\n"
+            "💾 Bajo la tabla: Exportar tabla (CSV/Sheets/PDF), Exportar ZIP 3D, copiar SMILES y enviar candidatos generados a ADMET local.\n"
+            "🧠 La pestaña ADMET funciona como un buscador integrado: puedes pegar SMILES, importar candidatos Ideal/Warning, navegar entre compuestos con la búsqueda y revisar sus salidas locales sin abrir popups.\n"
             "🧪 Los paneles plegables de ADMET resumen cómo cargar candidatos, cómo interpretar los resultados y qué workflow seguir para priorización.\n"
-            "🧩 El ZIP 3D y la exportación ADMET ahora se ejecutan desde la pestaña ADMET; ambos permiten exportar todos los candidatos Ideal o elegir manualmente un subconjunto concreto.\n"
+            "🧩 La exportación ADMET soporta CSV/Sheets/PDF. ZIP 3D está bajo la tabla de Resultados y puede incluir estructuras Warning generadas con SMILES.\n"
             "⚠️ Las predicciones ADMET son orientativas para cribado temprano; no sustituyen ensayos experimentales ni validación farmacológica.\n"
             "🧩 El resto de exportaciones avanzadas (Custom ZIP, bundles reproducibles, dataset tipo paper, etc.) se liberarán como packs/plugins en próximas versiones.\n"
             "💬 Usa el botón 'Feedback' (arriba a la derecha) para sugerir reacciones/features y reportar bugs.\n\n"
             "> PASO 5: EXPORTAR ZIP 3D\n"
-            "En la pestaña ADMET puedes exportar un ZIP 3D con conformeros (SDF) o un CSV ADMET para todos los compuestos Ideal o para un subconjunto seleccionado manualmente.\n\n"
+            "Usa Exportar ZIP 3D bajo la tabla de Resultados para generar conformeros SDF de estructuras Ideal o Warning seleccionadas con SMILES.\n\n"
             "⚠️ SOLUCIÓN DE PROBLEMAS Y BUENAS PRÁCTICAS\n"
             "• 'Sin productos válidos': Reduzca el umbral o verifique la validez de los SMILES.\n"
             "• Errores RDKit: Ejecute `conda install -c conda-forge rdkit`.\n"
@@ -500,7 +524,7 @@ LOCALES = {
     },
     "English": {
         "feedback": "Feedback",
-        "titulo": "Moleku v1.0", "tab_motor": "Engine {rxn}", "tab_resultados": "Results",
+        "titulo": "Moleku v1.1.0", "tab_motor": "Engine {rxn}", "tab_resultados": "Results",
         "tab_espacio": "Chemical Space", "tab_admet": "ADMET", "tab_acerca": "About", "tab_guide": "Guide",
         "info_formato": "ℹ Formats: .csv, .txt, .tsv, .xlsx, .xls, .ods, .json, .numbers  |  Columns: NAME and SMILES",
         "csv_de": "File for {comp}:", "examinar": "Browse…", "reactivos_centrales": "Core reagents:",
@@ -544,6 +568,15 @@ LOCALES = {
         "export_3d_title": "Export 3D ZIP",
         "export_3d_msg": "Generating 3D conformers. This can take a while for large datasets.",
         "exportar_pdf": "Export PDF", "exportar_alta_calidad": "Export High Quality", "no_datos": "No data.",
+        "export_table": "Export Table",
+        "export_table_title": "Export results table",
+        "export_table_hint": "Choose which result scope and file format to export.",
+        "export_scope": "Result scope",
+        "export_format": "Format",
+        "export_format_csv": "CSV (.csv)",
+        "export_format_xlsx": "Sheets (.xlsx)",
+        "export_format_pdf": "PDF (.pdf)",
+        "export_scope_empty": "That scope has no rows to export.",
         "admet_copy_sel": "Copy SMILES (selection)",
         "admet_copy_ideal": "Copy SMILES (Ideal)",
         "admet_open_web": "Open ADMET-IA (web)",
@@ -553,15 +586,19 @@ LOCALES = {
         "admet_missing_pkg": "Local prediction requires the 'admet-ai' package.\n\nInstall:\n  pip install admet-ai",
         "admet_missing_pkg_app": "Local ADMET is not correctly available inside this executable.\n\nUse the updated Moleku build or rebuild the app with the full ADMET runtime included.",
         "admet_results_title": "ADMET-IA — Predictions",
-        "admet_export_csv": "Export ADMET (CSV)",
-        "admet_tab_hint": "Paste one or more SMILES in this tab or load Ideal candidates directly from Results to explore local ADMET predictions through a search-driven workflow.",
+        "admet_export_csv": "Export ADMET",
+        "admet_export": "Export ADMET",
+        "admet_export_title": "Export ADMET table",
+        "admet_export_hint": "Choose which analyzed ADMET candidates and file format to export.",
+        "admet_tab_hint": "Paste one or more SMILES in this tab or load generated candidates directly from Results to explore local ADMET predictions through a search-driven workflow.",
         "admet_tab_input_title": "Candidate input",
-        "admet_tab_input_hint": "Paste one SMILES per line, use the search bar to revisit computed candidates, or import the Ideal candidates generated by Moleku.",
+        "admet_tab_input_hint": "Paste one SMILES per line, use the search bar to revisit computed candidates, or import generated Ideal/Warning candidates from Moleku.",
         "admet_info_title": "ADMET quick guide",
         "admet_info_hint": "Short panels to explain candidate loading, output interpretation, and how to export useful subsets from ADMET.",
         "admet_tab_run_input": "Run pasted SMILES",
         "admet_tab_use_visible": "Use visible results",
-        "admet_tab_use_ideal": "Use Ideal results",
+        "admet_tab_use_ideal": "Use Results",
+        "admet_tab_use_results": "Use Results",
         "admet_tab_search": "Search candidate/SMILES:",
         "admet_tab_search_clear": "Clear",
         "admet_tab_results_count": "Analyzed candidates: {n} / {total}",
@@ -576,11 +613,12 @@ LOCALES = {
         "admet_tab_no_input_smiles": "Paste at least one valid SMILES in the ADMET input box.",
         "admet_tab_no_results_visible": "There are no visible Results candidates to send to ADMET.",
         "admet_tab_no_ideal_results": "There are no Ideal candidates available to send to ADMET.",
+        "admet_tab_no_results_generated": "There are no generated Ideal/Warning candidates with SMILES available to send to ADMET.",
         "admet_tab_running": "Running local ADMET for {n} candidate(s)...",
         "admet_help_input_title": "How to load candidates",
         "admet_help_input": (
             "• Paste SMILES directly into the upper-right input box, one per line.\n"
-            "• You can also import the Ideal candidates from Results.\n"
+            "• You can also import generated Ideal/Warning candidates from Results.\n"
             "• Both plain SMILES lines and name/SMILES pairs separated by tabs, commas, or semicolons are accepted.\n"
             "• Lines starting with '#' are ignored as comments, and duplicate SMILES are removed before running ADMET.\n"
             "• The search bar filters candidates that were already computed, without re-running ADMET."
@@ -599,22 +637,29 @@ LOCALES = {
             "2) Run local ADMET from this tab.\n"
             "3) Use the top search bar to move quickly across computed candidates.\n"
             "4) Review the 2D structure and compare ADMET outputs to rank the best/worst profiles.\n"
-            "5) Export ADMET CSV or a 3D ZIP for all Ideal candidates or for a manually selected subset.\n"
+            "5) Export the ADMET table as CSV, Sheets, or PDF; generate 3D ZIP from the Results tab.\n"
             "6) Keep the strongest candidates for deeper analysis or external validation."
         ),
         "export_select_title_3d": "Select candidates for 3D ZIP export",
         "export_select_title_admet": "Select candidates for ADMET export",
-        "export_select_hint": "Choose whether to export all Ideal candidates or manually select a specific subset of candidates.",
+        "admet_select_title_results": "Select Results candidates for ADMET",
+        "admet_select_hint_results": "Choose Ideal candidates, Ideal + Warning candidates with SMILES, or manually select a subset.",
+        "admet_select_mode_ideal": "Use all Ideal candidates",
+        "admet_select_mode_generated": "Use Ideal + Warning candidates (with SMILES)",
+        "admet_select_mode_manual": "Manually select candidates",
+        "export_select_hint": "Choose whether to export all Ideal candidates, Ideal + Warning candidates with SMILES, or manually select a specific subset.",
         "export_select_mode_ideal": "Export all Ideal candidates",
+        "export_select_mode_generated": "Export Ideal + Warning (with SMILES)",
         "export_select_mode_manual": "Manually select specific candidates",
         "export_select_candidates": "Available candidates",
         "export_select_all": "Select all",
         "export_select_clear": "Clear selection",
         "export_select_apply": "Export",
+        "export_select_apply_use": "Use candidates",
         "export_select_cancel": "Cancel",
         "export_select_need_candidates": "There are no candidates available to export.",
         "export_select_need_manual": "Select at least one candidate to export.",
-        "filtro": "Filter:", "ideal": "Ideal", "todos": "All", "descartado": "Discarded",
+        "filtro": "Filter:", "ideal": "Ideal", "warning": "Warning", "error": "Error", "generated": "Generated", "todos": "All", "descartado": "Discarded",
         "table_view": "Table view:",
         "table_view_custom": "Custom…",
         "table_cols_title": "Visible columns (table)",
@@ -657,9 +702,10 @@ LOCALES = {
             "- Visible column headers follow the UI language (English/Spanish); exported CSV keys stay stable for reproducibility.\n"
             "- 'Custom…' sets visible columns even before a run (preview layout).\n"
             "\n"
-            "CLASSIFICATION (Ideal vs Discarded)\n"
+            "CLASSIFICATION (Ideal / Warning / Error)\n"
             "- Ideal: depends on the 'Ideal criterion' selected on the Engine tab (Lipinski / Ghose / Veber / Egan / Muegge / Any / All).\n"
-            "- Discarded: (a) product exists but fails the selected rule or score threshold (SMILES_Final may still be present), or (b) no product / sanitization / invalid reactant.\n"
+            "- Warning: product exists and SMILES_Final is available, but it fails the selected rule or score threshold.\n"
+            "- Error: no valid product/SMILES could be generated, or the reaction/sanitization failed.\n"
             "- Duplicates: Is_Duplicate and Duplicate_Of relative to the first repeated InChIKey.\n"
             "\n"
             "WHY THESE PARAMETERS?\n"
@@ -672,11 +718,11 @@ LOCALES = {
             "- The 'Score threshold' slider discards results below the threshold (shown as Discarded with reason 'Below threshold').\n"
             "\n"
             "EXPORTS (overview)\n"
-            "- Under the table: CSV, Sheets, and PDF; copy SMILES (selection/Ideal) and send candidates to the ADMET tab for local analysis.\n"
-            "- NEW: CSV, Sheets and PDF now honor the active table filter (Ideal / All / Discard), so the exported file matches exactly the visible rows and no blank cells are written. The suggested filename includes the filter (e.g. mcrg_results_ideal.csv).\n"
-            "- 3D ZIP is now launched from the ADMET tab; it keeps its own logic (always exports conformers for compounds classified as Ideal).\n"
+            "- Under the table: Export Table (CSV/Sheets/PDF), Export 3D ZIP, copy SMILES, and send candidates to ADMET local.\n"
+            "- Export Table lets you choose Ideal / Warning / Error / Generated / All and the output format.\n"
+            "- 3D ZIP exports generated candidates with SMILES (Ideal and Warning) through its own candidate selector.\n"
             "- ADMET (local) runs offline predictions and feeds the ADMET tab with integrated search and visualization.\n"
-            "- In v1.0 (core), advanced packages (Custom ZIP / reproducible bundles / paper dataset / extra analytics) ship as plugins/packs.\n"
+            "- In v1.1.0 (core), advanced packages (Custom ZIP / reproducible bundles / paper dataset / extra analytics) ship as plugins/packs.\n"
             "\n"
             "Failure_Reason\n"
             "- Explains the exact reason for discarding (e.g. 'No products generated', 'Sanitize failed', 'Invalid reactant', 'Fails <Rule>', 'Below threshold')."
@@ -689,20 +735,22 @@ LOCALES = {
             "4) (Optional) Standardize products (desalt/neutralize).\n"
             "5) For successful products, compute descriptors + compatibility (%) + Pass_* rules + MedChem alerts.\n"
             "6) Compute InChIKey and flag duplicates.\n"
-            "7) Classify Ideal/Discarded using the selected criterion and record Failure_Reason.\n"
-            "8) Results: filter Ideal/All/Discarded; use 'Custom…' for columns; 2D structure on row selection.\n"
-            "9) Export as needed: CSV/XLSX/PDF/3D ZIP.\n"
+            "7) Classify Ideal / Warning / Error using the selected criterion and record Failure_Reason.\n"
+            "8) Results: filter Ideal / Warning / Error / Generated / All; use 'Custom…' for columns; 2D structure on row selection.\n"
+            "9) Export as needed: table CSV/XLSX/PDF or 3D ZIP.\n"
             "10) For advanced functionality, use future packs/plugins."
         ),
-        "results_help_views_title": "How to read Ideal / All / Discard",
+        "results_help_views_title": "How to read Ideal / Warning / Error",
         "results_help_views": (
             "- Ideal: rows that satisfy the active 'Ideal criterion' on the Engine tab (not only Lipinski—you can change the rule).\n"
-            "- Discard: failed attempts or products that fail the criterion or score threshold; many rows still keep SMILES_Final for inspection.\n"
-            "- All: every evaluated attempt (Ideal + Discard), consistent with the run's Total counter.\n"
+            "- Warning: generated structures with SMILES_Final that fail the criterion or threshold; review is under user responsibility.\n"
+            "- Error: failed attempts without a valid generated product.\n"
+            "- Generated: all rows with SMILES_Final (Ideal + Warning).\n"
+            "- All: every evaluated attempt, consistent with the run's Total counter.\n"
             "\n"
             "FILTER-AWARE EXPORTS\n"
-            "- CSV, Sheets (XLSX) and PDF export exactly the active view (Ideal / All / Discard); filtering before exporting avoids blank rows in the output.\n"
-            "- 3D ZIP does not use this filter: it always exports only the compounds classified as Ideal (3D generation is expensive)."
+            "- Export Table lets you choose scope and format explicitly: CSV, Sheets (XLSX), or PDF.\n"
+            "- 3D ZIP uses its own candidate selector and can include generated Warning structures with SMILES."
         ),
         "results_toggle_info_hide": "Hide info panels",
         "results_toggle_info_show": "Show info panels",
@@ -717,7 +765,7 @@ LOCALES = {
         "saved": "Saved:",
         "guide_title": "User Guide — Moleku",
         "guide_text": (
-            "WELCOME TO Moleku v1.0\n"
+            "WELCOME TO Moleku v1.1.0\n"
             "──────────────────────────────\n"
             "Moleku is a desktop platform for Computer-Aided Drug Design (CADD), enabling rapid virtual library generation via Multi-Component Reactions (MCR).\n\n"
             "> STEP 1: PREPARE INPUT FILES\n"
@@ -732,26 +780,26 @@ LOCALES = {
             "    4-Nitrobenzaldehyde,O=Cc1ccc([N+](=O)[O-])cc1\n"
             "    Cinnamaldehyde_E,O=C/C=C/c1ccccc1\n\n"
             "> STEP 2: SELECT MCR REACTION\n"
-            "In Moleku v1.0 (core) only three 3-component MCRs are included: Biginelli (3-CR), GBB (3-CR), and Gewald (3-CR). Ugi (4-CR) and other reactions are not part of this release. The Data Preview panel displays the reaction scheme, DOI, and mechanistic notes.\n"
+            "In Moleku v1.1.0 (core) only three 3-component MCRs are included: Biginelli (3-CR), GBB (3-CR), and Gewald (3-CR). Ugi (4-CR) and other reactions are not part of this release. The Data Preview panel displays the reaction scheme, DOI, and mechanistic notes.\n"
             "⚗️ For reactions with fixed core components, use the checkboxes. Select one or multiple to automatically generate ALL combinatorial variations in a single run.\n\n"
             "> STEP 3: CONFIGURE & RUN\n"
             "Upload one file per external component. Adjust the Score threshold (0–100%). Click '▶ Start virtual generation'.\n"
             "⚙️ The engine computes the Cartesian product, maps RDKit SMARTS, and evaluates each product with scoring + drug-likeness rules (Lipinski/Ghose/Veber/Egan/Muegge).\n"
             "🧼 Optional: enable 'Standardize products' for desalt/neutralize and InChIKey-based deduplication.\n\n"
             "> STEP 4: ANALYZE RESULTS\n"
-            "Results appear in 'Results'. Filter by Ideal / All / Discarded. Click any row to view 2D structure and properties.\n"
+            "Results appear in 'Results'. Filter by Ideal / Warning / Error / Generated / All. Click any row to view 2D structure and properties.\n"
             "🧩 Use 'Custom…' to choose visible columns (works even before you have data, to preconfigure the table).\n"
             "Table headers follow the UI language; exported files keep stable internal column names.\n"
             "🧬 Chirality/stereochemistry: the table includes Has_Stereo and chiral center counts (defined/unassigned) computed from SMILES_Final.\n"
-            "💾 Under the table: export CSV and Sheets, copy SMILES (selection / Ideal), and send candidates to the ADMET tab for local analysis.\n"
-            "🧠 The ADMET tab behaves like an integrated search workspace: paste SMILES, import Ideal candidates, move through compounds with the search bar, and inspect local outputs without popups.\n"
+            "💾 Under the table: Export Table (CSV/Sheets/PDF), Export 3D ZIP, copy SMILES, and send generated candidates to the ADMET tab for local analysis.\n"
+            "🧠 The ADMET tab behaves like an integrated search workspace: paste SMILES, import generated Ideal/Warning candidates, move through compounds with the search bar, and inspect local outputs without popups.\n"
             "🧪 The collapsible ADMET panels summarize how to load candidates, how to interpret predictions, and which workflow to follow for prioritization.\n"
-            "🧩 3D ZIP and ADMET CSV now run from the ADMET tab; both can export all Ideal candidates or a manually selected subset.\n"
+            "🧩 ADMET exports support CSV/Sheets/PDF. 3D ZIP is available under the Results table and can include generated Warning structures with SMILES.\n"
             "⚠️ ADMET predictions are screening-oriented estimates and should not be treated as experimental proof.\n"
             "🧩 Other advanced exports (Custom ZIP, reproducible bundles, paper dataset, etc.) will ship as packs/plugins in future releases.\n"
             "💬 Use the 'Feedback' button (top-right) to suggest reactions/features and report issues.\n\n"
             "> STEP 5: EXPORT 3D ZIP\n"
-            "In the ADMET tab you can export a 3D ZIP with conformers (SDF) or an ADMET CSV for all Ideal compounds or for a manually selected subset.\n\n"
+            "Use Export 3D ZIP under the Results table to generate conformer SDF files for selected Ideal or Warning structures with SMILES.\n\n"
             "⚠️ TROUBLESHOOTING & BEST PRACTICES\n"
             "• 'No valid products': Lower threshold or verify SMILES validity.\n"
             "• RDKit errors: Run `conda install -c conda-forge rdkit`.\n"
@@ -921,11 +969,11 @@ LOCALES = {
         "web_ps_hint": "Tip: use hex colors (#RRGGBB). Saved in your browser."
     },
     # ──────────────────────────────────────────────────────────────────
-    # Additional UI languages (v1.0): partial translations + English fallback
+    # Additional UI languages (v1.1.0): partial translations + English fallback
     # ──────────────────────────────────────────────────────────────────
     "Deutsch": {
         # Core navigation
-        "titulo": "Moleku v1.0",
+        "titulo": "Moleku v1.1.0",
         "tab_motor": "Engine {rxn}",
         "tab_resultados": "Ergebnisse",
         "tab_admet": "ADMET",
@@ -1095,7 +1143,7 @@ LOCALES = {
         "guide_title": "Benutzerhandbuch — Moleku",
         # Full guide content (same information as Spanish/English, translated)
         "guide_text": (
-            "WILLKOMMEN BEI Moleku v1.0\n"
+            "WILLKOMMEN BEI Moleku v1.1.0\n"
             "──────────────────────────────\n"
             "Moleku ist eine professionelle Desktop-Plattform für Computer-Aided Drug Design (CADD) und ermöglicht die schnelle Generierung virtueller Bibliotheken über Multi-Component Reactions (MCR).\n\n"
             "> SCHRITT 1: EINGABEDATEIEN VORBEREITEN\n"
@@ -1110,7 +1158,7 @@ LOCALES = {
             "    4-Nitrobenzaldehyd,O=Cc1ccc([N+](=O)[O-])cc1\n"
             "    Zimtaldehyd_E,O=C/C=C/c1ccccc1\n\n"
             "> SCHRITT 2: MCR-REAKTION AUSWÄHLEN\n"
-            "In Moleku v1.0 (core) sind ausschließlich drei 3-Komponenten-MCRs enthalten: Biginelli (3-CR), GBB (3-CR) und Gewald (3-CR). Ugi (4-CR) und weitere Reaktionen gehören nicht zu dieser Version. Das Vorschau-Panel zeigt Schema, DOI und Hinweise.\n"
+            "In Moleku v1.1.0 (core) sind ausschließlich drei 3-Komponenten-MCRs enthalten: Biginelli (3-CR), GBB (3-CR) und Gewald (3-CR). Ugi (4-CR) und weitere Reaktionen gehören nicht zu dieser Version. Das Vorschau-Panel zeigt Schema, DOI und Hinweise.\n"
             "⚗️ Bei Reaktionen mit festen zentralen Komponenten nutzt du die Checkboxen (Zentrale Reagenzien), um Varianten zu erzeugen.\n\n"
             "> SCHRITT 3: KONFIGURIEREN & STARTEN\n"
             "Lade je Komponente eine Datei hoch. Stelle die Score-Schwelle (0–100%) ein und klicke auf '▶ Virtuelle Generierung starten'.\n"
@@ -1147,7 +1195,7 @@ LOCALES = {
     },
     "日本語": {
         # Core navigation
-        "titulo": "Moleku v1.0",
+        "titulo": "Moleku v1.1.0",
         "tab_motor": "エンジン {rxn}",
         "tab_resultados": "結果",
         "tab_guide": "ガイド",
@@ -1315,7 +1363,7 @@ LOCALES = {
         # Guide/About
         "guide_title": "ユーザーガイド — Moleku",
         "guide_text": (
-            "Moleku v1.0 へようこそ\n"
+            "Moleku v1.1.0 へようこそ\n"
             "──────────────────────────────\n"
             "Moleku は多成分反応（MCR）により仮想ライブラリを迅速に生成する、プロフェッショナルなデスクトップ CADD プラットフォームです。\n\n"
             "> ステップ 1: 入力ファイルの準備\n"
@@ -1330,7 +1378,7 @@ LOCALES = {
             "    4-Nitrobenzaldehyde,O=Cc1ccc([N+](=O)[O-])cc1\n"
             "    Cinnamaldehyde_E,O=C/C=C/c1ccccc1\n\n"
             "> ステップ 2: MCR 反応の選択\n"
-            "v1.0（core）では 3 成分 MCR のみ 3 つ（Biginelli (3-CR)、GBB (3-CR)、Gewald (3-CR)）を提供します。Ugi (4-CR) などはこの版の対象外です。プレビューにスキーム/DOI/注意点が表示されます。\n"
+            "v1.1.0（core）では 3 成分 MCR のみ 3 つ（Biginelli (3-CR)、GBB (3-CR)、Gewald (3-CR)）を提供します。Ugi (4-CR) などはこの版の対象外です。プレビューにスキーム/DOI/注意点が表示されます。\n"
             "⚗️ 中心成分がある反応では、チェックボックス（中心試薬）で組合せを生成できます。\n\n"
             "> ステップ 3: 設定して実行\n"
             "成分ごとにファイルを読み込み、スコアしきい値（0–100%）を設定して開始します。\n"
@@ -1367,7 +1415,7 @@ LOCALES = {
     },
     "中文": {
         # Core navigation
-        "titulo": "Moleku v1.0",
+        "titulo": "Moleku v1.1.0",
         "tab_motor": "引擎 {rxn}",
         "tab_resultados": "结果",
         "tab_guide": "指南",
@@ -1535,7 +1583,7 @@ LOCALES = {
         # Guide/About
         "guide_title": "用户指南 — Moleku",
         "guide_text": (
-            "欢迎使用 Moleku v1.0\n"
+            "欢迎使用 Moleku v1.1.0\n"
             "──────────────────────────────\n"
             "Moleku 是专业的桌面 CADD 平台，可通过多组分反应（MCR）快速生成虚拟文库。\n\n"
             "> 第 1 步：准备输入文件\n"
@@ -1550,7 +1598,7 @@ LOCALES = {
             "    4-Nitrobenzaldehyde,O=Cc1ccc([N+](=O)[O-])cc1\n"
             "    Cinnamaldehyde_E,O=C/C=C/c1ccccc1\n\n"
             "> 第 2 步：选择 MCR 反应\n"
-            "v1.0（core）仅包含三个三组分 MCR：Biginelli (3-CR)、GBB (3-CR)、Gewald (3-CR)。Ugi (4-CR) 等不在此版本范围。预览面板显示反应示意/DOI/说明。\n"
+            "v1.1.0（core）仅包含三个三组分 MCR：Biginelli (3-CR)、GBB (3-CR)、Gewald (3-CR)。Ugi (4-CR) 等不在此版本范围。预览面板显示反应示意/DOI/说明。\n"
             "⚗️ 若反应包含中心试剂，可通过复选框生成组合变体。\n\n"
             "> 第 3 步：配置并运行\n"
             "为每个组分加载文件，设置分数阈值（0–100%），点击开始生成。\n"
@@ -1589,10 +1637,53 @@ LOCALES = {
 
 # Ensure partial locales fall back to English for missing keys.
 # This keeps the UI fully translated (no raw keys) while allowing incremental translation work.
+_UPDATED_ENGLISH_FALLBACK_KEYS = (
+    "admet_tab_hint",
+    "admet_tab_input_hint",
+    "admet_tab_use_results",
+    "admet_tab_use_ideal",
+    "admet_export",
+    "admet_export_csv",
+    "admet_export_title",
+    "admet_export_hint",
+    "admet_help_input",
+    "admet_help_workflow",
+    "admet_select_title_results",
+    "admet_select_hint_results",
+    "admet_select_mode_ideal",
+    "admet_select_mode_generated",
+    "admet_select_mode_manual",
+    "export_table",
+    "export_table_title",
+    "export_table_hint",
+    "export_scope",
+    "export_format",
+    "export_format_csv",
+    "export_format_xlsx",
+    "export_format_pdf",
+    "export_scope_empty",
+    "generated",
+    "results_help_params",
+    "results_help_workflow",
+    "results_help_views_title",
+    "results_help_views",
+    "guide_text",
+)
 for _lang in ("Deutsch", "日本語", "中文"):
     try:
         if _lang in LOCALES and "English" in LOCALES:
             LOCALES[_lang] = {**LOCALES["English"], **LOCALES[_lang]}
+            for _key in _UPDATED_ENGLISH_FALLBACK_KEYS:
+                if _key in LOCALES["English"]:
+                    LOCALES[_lang][_key] = LOCALES["English"][_key]
     except Exception:
         pass
 
+try:
+    _preferred_order = ("English", "Español", "Deutsch", "日本語", "中文")
+    LOCALES = {
+        **{_lang: LOCALES[_lang] for _lang in _preferred_order if _lang in LOCALES},
+        **{_lang: data for _lang, data in LOCALES.items() if _lang not in _preferred_order},
+    }
+except Exception:
+    pass

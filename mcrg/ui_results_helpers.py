@@ -1,20 +1,12 @@
 from __future__ import annotations
 
+from .run_counts import format_run_counter
+
 
 def update_results_counter(app, g: dict):
     HAS_CTK = g["HAS_CTK"]
 
-    df = app.df_all
-    if df is None or getattr(df, "empty", True):
-        txt = "Total: 0 | ✅ Ideal: 0 | ❌ Discarded: 0"
-    else:
-        try:
-            total = int(len(df))
-            ideal = int((df["Classification"] == "Ideal").sum()) if "Classification" in df.columns else 0
-            disc = total - ideal
-        except Exception:
-            total, ideal, disc = len(df), 0, 0
-        txt = f"Total: {total} | ✅ Ideal: {ideal} | ❌ Discarded: {disc}"
+    txt = format_run_counter(getattr(app, "df_all", None), getattr(app, "df_ideal", None))
     if hasattr(app, "lbl_results_counter") and app.lbl_results_counter:
         (app.lbl_results_counter.configure(text=txt) if HAS_CTK else app.lbl_results_counter.config(text=txt))
 
@@ -106,7 +98,7 @@ def clear_results(app, g: dict):
     for cv, _ in app._plot_canvases:
         cv.delete("all")
     app._plot_canvases = []
-    (app.lbl_combinations.configure(text="📊 Total: 0 | ✅ Ideal: 0 | ❌ Discarded: 0") if HAS_CTK else app.lbl_combinations.config(text="📊 Total: 0 | ✅ Ideal: 0 | ❌ Discarded: 0"))
+    (app.lbl_combinations.configure(text=format_run_counter(None, None)) if HAS_CTK else app.lbl_combinations.config(text=format_run_counter(None, None)))
     try:
         app._clear_admet_view()
     except Exception:
@@ -114,4 +106,3 @@ def clear_results(app, g: dict):
     app._update_labels()
     (app.lbl_status.configure(text=app.t("resultados_limpiados")) if HAS_CTK else app.lbl_status.config(text=app.t("resultados_limpiados")))
     app._update_results_counter()
-

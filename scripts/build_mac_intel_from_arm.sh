@@ -26,7 +26,7 @@ ENV_NAME="${MOLEKU_INTEL_ENV_NAME:-mcrg-build-intel}"
 echo "Preparing Intel build environment: $ENV_NAME"
 
 CONDA_SUBDIR=osx-64 conda create -y -n "$ENV_NAME" -c conda-forge \
-  python=3.11 rdkit pandas pillow pyinstaller pytest matplotlib numpy reportlab
+  python=3.11 rdkit pandas pillow pyinstaller pytest matplotlib numpy openpyxl reportlab
 
 CONDA_SUBDIR=osx-64 conda run -n "$ENV_NAME" python -m pip install --upgrade pip
 CONDA_SUBDIR=osx-64 conda run -n "$ENV_NAME" python -m pip install --upgrade \

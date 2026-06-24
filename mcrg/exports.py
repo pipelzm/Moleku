@@ -61,12 +61,18 @@ def export_paper_dataset_zip(
             pass
 
     df_ideal = None
+    df_generated = None
     if df_all is not None and not getattr(df_all, "empty", True):
         try:
             if "Classification" in df_all.columns:
                 df_ideal = df_all[df_all["Classification"] == "Ideal"].copy()
         except Exception:
             df_ideal = None
+        try:
+            if "SMILES_Final" in df_all.columns:
+                df_generated = df_all[df_all["SMILES_Final"].fillna("").astype(str).str.len() > 0].copy()
+        except Exception:
+            df_generated = None
 
     def _sha256_file(p: str) -> str:
         h = hashlib.sha256()
@@ -204,7 +210,7 @@ def export_paper_dataset_zip(
                 _safe_to_csv(df_all[alerts_cols].copy(), os.path.join(td, "tables", "medchem_alerts.csv"))
 
             if opts["tables_sdf"]:
-                df_sdf = df_ideal if (df_ideal is not None and not getattr(df_ideal, "empty", True)) else df_all
+                df_sdf = df_generated if (df_generated is not None and not getattr(df_generated, "empty", True)) else df_all
                 try:
                     w = Chem.SDWriter(sdf_path)
                     if "SMILES_Final" in df_sdf.columns:
@@ -319,6 +325,7 @@ def export_paper_dataset_zip(
             "mcr": ctx.get("mcr", ""),
             "threshold": ctx.get("threshold", None),
             "ideal_rule": ctx.get("ideal_rule", None),
+            "standardize": ctx.get("standardize", None),
             "n_rows": int(len(df_all)) if df_all is not None else 0,
             "selection": opts,
             "files": {},
@@ -467,7 +474,11 @@ def export_research_bundle_zip(
             df_ideal.to_csv(csv_ideal, index=False)
 
         sdf_path = os.path.join(td, "results.sdf")
-        df_sdf = df_ideal if (df_ideal is not None and not getattr(df_ideal, "empty", True)) else df_all
+        try:
+            df_generated = df_all[df_all["SMILES_Final"].fillna("").astype(str).str.len() > 0].copy() if "SMILES_Final" in df_all.columns else None
+        except Exception:
+            df_generated = None
+        df_sdf = df_generated if (df_generated is not None and not getattr(df_generated, "empty", True)) else (df_ideal if (df_ideal is not None and not getattr(df_ideal, "empty", True)) else df_all)
         written = 0
         skipped = 0
         if "SMILES_Final" in df_sdf.columns:
@@ -531,6 +542,8 @@ def export_research_bundle_zip(
             "run_context": {
                 "mcr": ctx.get("mcr", current_mcr),
                 "threshold": ctx.get("threshold", current_threshold),
+                "ideal_rule": ctx.get("ideal_rule", None),
+                "standardize": ctx.get("standardize", None),
                 "core_reagents": ctx.get("core_reagents", []),
                 "filter_view": current_filter,
                 "lang": current_lang,
@@ -539,6 +552,7 @@ def export_research_bundle_zip(
             "stats": {
                 "rows_all": int(len(df_all)),
                 "rows_ideal": int(len(df_ideal)) if df_ideal is not None else 0,
+                "rows_generated": int(len(df_generated)) if df_generated is not None else 0,
                 "sdf_written": int(written),
                 "sdf_skipped": int(skipped),
                 "plots_exported": bool(plots_ok),
@@ -596,4 +610,3 @@ def export_research_bundle_zip(
                 files_added += 1
 
         return {"files": files_added}
-

@@ -31,9 +31,21 @@ jobs:
       - name: Install dependencies
         shell: bash -l {0}
         run: |
-          mamba install -y rdkit pandas pillow pyinstaller pytest
+          mamba install -y rdkit=2026.03.1 pandas=2.1.4 numpy=1.26.4 pillow openpyxl reportlab pyinstaller pytest
           python -m pip install --upgrade pip
-          python -m pip install customtkinter matplotlib numpy
+          python -m pip install --upgrade "setuptools<81" "pyinstaller-hooks-contrib>=2026.4"
+          python -m pip install customtkinter matplotlib "torch==2.2.2" "admet-ai==1.3.1" py4j
+
+      - name: Dependency report
+        shell: bash -l {0}
+        run: |
+          python - <<'PY'
+          import rdkit, pandas, numpy, chemprop
+          print("RDKit", getattr(rdkit, "__version__", "unknown"))
+          print("pandas", pandas.__version__)
+          print("NumPy", numpy.__version__)
+          print("Chemprop", getattr(chemprop, "__version__", "unknown"))
+          PY
 
       - name: Run tests
         shell: bash -l {0}
@@ -142,4 +154,3 @@ jobs:
             artifacts/**/Moleku-macOS.zip
             artifacts/**/Moleku-Linux.zip
             artifacts/**/Moleku-Linux.AppImage
-

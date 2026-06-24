@@ -18,11 +18,22 @@ def test_catalog_smarts_compile():
 
     bad = []
     for k, info in m.MCR_CATALOGO.items():
-        smarts = info.get("smarts", "")
-        rxn = m.AllChem.ReactionFromSmarts(smarts)
-        if rxn is None:
-            bad.append(k)
+        smarts_list = [info.get("smarts", "")]
+        smarts_list.extend(info.get("smarts_variants", []) or [])
+        for idx, smarts in enumerate(smarts_list):
+            rxn = m.AllChem.ReactionFromSmarts(smarts)
+            if rxn is None:
+                bad.append(f"{k}#{idx}")
     assert not bad, f"Invalid reaction SMARTS for: {bad}"
+
+
+def test_desktop_catalog_uses_modular_core_definitions():
+    import mcrg_desktop as m
+    from mcrg.catalog import MCR_CATALOGO as modular_catalog
+
+    for key in ("Biginelli (3-CR)", "GBB (3-CR)", "Gewald (3-CR)"):
+        assert m.MCR_CATALOGO[key]["smarts"] == modular_catalog[key]["smarts"]
+        assert m.MCR_CATALOGO[key].get("smarts_variants", []) == modular_catalog[key].get("smarts_variants", [])
 
 
 def test_run_mcr_minimal_biginelli_is_deterministic(tmp_path):
@@ -85,4 +96,3 @@ def test_run_mcr_records_invalid_smiles_as_discarded(tmp_path):
     assert df_all.iloc[0]["Classification"] == "Discarded"
     assert "No products generated" in str(df_all.iloc[0]["Failure_Reason"])
     assert "Is_Duplicate" in df_all.columns
-

@@ -39,7 +39,7 @@ def build_results(app, g: dict):
     if HAS_CTK:
         app.seg_filter = ctk.CTkSegmentedButton(
             ff,
-            values=["Ideal", "All", "Discard"],
+            values=["Ideal", "Warning", "Error", "Generated", "All"],
             command=lambda v: (app.filter_var.set(v), app._apply_filter()),
             font=app._get_font(12),
             selected_color=CL["accent"],
@@ -48,7 +48,7 @@ def build_results(app, g: dict):
         app.seg_filter.set("Ideal")
         app.seg_filter.pack(side=LEFT, padx=8)
     else:
-        for v in ("Ideal", "All", "Discard"):
+        for v in ("Ideal", "Warning", "Error", "Generated", "All"):
             rb = tk.Radiobutton(
                 ff,
                 text=v,
@@ -116,6 +116,7 @@ def build_results(app, g: dict):
     cols = tuple(
         [
             "Compatibility_%",
+            "Review_Status",
             "Classification",
             "Failure_Reason",
             "SMILES_Final",
@@ -161,7 +162,7 @@ def build_results(app, g: dict):
     app.tree = ttk.Treeview(ft, columns=cols, show="headings", selectmode="extended", style="T.Treeview")
     for c in cols:
         app.tree.heading(c, text=app._col_label(c), command=lambda _c=c: app._sort(_c))
-        app.tree.column(c, width=120 if c in ("Compatibility_%", "Core_Reagent", "Classification") else 90, minwidth=50)
+        app.tree.column(c, width=120 if c in ("Compatibility_%", "Core_Reagent", "Classification", "Review_Status") else 90, minwidth=50)
     vs = ttk.Scrollbar(ft, orient=VERTICAL, command=app.tree.yview)
     hs = ttk.Scrollbar(ft, orient=HORIZONTAL, command=app.tree.xview)
     app.tree.configure(yscrollcommand=vs.set, xscrollcommand=hs.set)
@@ -175,27 +176,38 @@ def build_results(app, g: dict):
     fr_table_actions = app._frame(fr, fg_color=CL["bg"] if HAS_CTK else None)
     fr_table_actions.pack(fill=X, padx=16, pady=(2, 6))
 
-    # v1.0 core exports: CSV + XLSX.
-    # PDF export is kept behind a feature gate (future pack / when fully stable).
-    export_btns = [("exportar_csv", app._exp_csv), ("exportar_xlsx", app._exp_xlsx)]
-    if bool(getattr(app, "features", {}).get("export_pdf", False)):
-        export_btns.append(("exportar_pdf", app._exp_pdf))
-    for txt, cmd in export_btns:
-        b = app._btn(
+    app.btn_exportar_csv = None
+    app.btn_exportar_xlsx = None
+    app.btn_exportar_pdf = None
+    app.btn_export_table = app._btn(
+        fr_table_actions,
+        text="",
+        width=140,
+        height=32,
+        corner_radius=6,
+        fg_color=CL["bg3"],
+        hover_color=CL["border"],
+        text_color=CL["fg"],
+        font=app._get_font(11),
+        command=app._exp_table,
+    )
+    app.btn_export_table.pack(side=LEFT, padx=(0, 6))
+
+    app.btn_exportar_zip = None
+    if bool(getattr(app, "features", {}).get("export_zip_3d", True)):
+        app.btn_exportar_zip = app._btn(
             fr_table_actions,
             text="",
-            width=130,
+            width=140,
             height=32,
             corner_radius=6,
             fg_color=CL["bg3"],
             hover_color=CL["border"],
             text_color=CL["fg"],
             font=app._get_font(11),
-            command=cmd,
+            command=app._exp_zip,
         )
-        b.pack(side=LEFT, padx=(0, 6))
-        setattr(app, f"btn_{txt}", b)
-    app.btn_exportar_zip = None
+        app.btn_exportar_zip.pack(side=LEFT, padx=(0, 6))
 
     # Custom ZIP is intentionally not part of the v1.0 core.
     if bool(getattr(app, "features", {}).get("custom_zip", False)):
@@ -425,4 +437,3 @@ def build_results(app, g: dict):
         app._apply_results_info_layout()
     except Exception:
         pass
-

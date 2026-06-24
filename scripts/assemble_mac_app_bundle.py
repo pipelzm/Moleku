@@ -16,7 +16,7 @@ def main() -> int:
     parser.add_argument("output_app", help="Path to the output .app bundle.")
     parser.add_argument("--app-display-name", default="Moleku", help="User-visible app name.")
     parser.add_argument("--bundle-id", default="cl.ufro.moleku", help="macOS bundle identifier.")
-    parser.add_argument("--version", default="1.0.0", help="Bundle version.")
+    parser.add_argument("--version", default="1.1.0", help="Bundle version.")
     parser.add_argument("--icon", default="images/moleku_simple_icon.icns", help="Relative path to the .icns icon.")
     args = parser.parse_args()
 

@@ -5,6 +5,22 @@ on:
   pull_request:
 
 jobs:
+  smoke-light:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Smoke import without chemistry stack
+        run: |
+          python -m pytest -q tests/test_smoke_imports.py
+
   test:
     strategy:
       fail-fast: false
@@ -33,9 +49,9 @@ jobs:
       - name: Install dependencies
         shell: bash -l {0}
         run: |
-          conda install -y -c conda-forge rdkit pandas pillow pytest tk
+          conda install -y -c conda-forge rdkit pandas pillow numpy openpyxl reportlab pytest tk
           python -m pip install --upgrade pip
-          python -m pip install customtkinter matplotlib numpy
+          python -m pip install customtkinter matplotlib
 
       - name: Run tests
         shell: bash -l {0}
@@ -46,4 +62,3 @@ jobs:
         shell: bash -l {0}
         run: |
           python -c "import mcrg_desktop; import mcrg; print('smoke-ok')"
-

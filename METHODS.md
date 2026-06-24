@@ -36,7 +36,7 @@ The default “Ideal” classification is based on Lipinski’s Rule of Five thr
 - HBD ≤ 5
 - HBA ≤ 10
 
-Products failing these limits are recorded as `Discarded` but still keep their `SMILES_Final` for inspection.
+Products failing these limits keep their `SMILES_Final` and are marked with `Review_Status = Warning`, so they remain available for inspection and optional 3D export. Attempts that fail to produce a valid product are marked with `Review_Status = Error`.
 
 ### Additional rule-based filters
 
@@ -49,7 +49,7 @@ Moleku can label “Ideal” using other common drug-likeness heuristics (select
 
 ### Score threshold
 
-Moleku also computes a simple compatibility score in the range 0–100 with penalties for deviating from target values (MW ≈ 350, LogP ≈ 2.5, TPSA ≈ 90). Results below the user threshold are recorded as `Discarded` with a “Below threshold” reason.
+Moleku also computes a simple compatibility score in the range 0–100 with penalties for deviating from target values (MW ≈ 350, LogP ≈ 2.5, TPSA ≈ 90). Results below the user threshold are marked as `Warning` with a “Below threshold” reason when they still have a valid `SMILES_Final`.
 
 ## 5) Standardization / uniqueness
 
@@ -77,4 +77,3 @@ The Research Bundle ZIP includes:
 - results (CSV + SDF)
 - plots (and manifests)
 - `run_manifest.json` recording parameters, environment versions, catalogue hash, and SHA256 hashes of input files (and best-effort copies of inputs in the bundle).
-

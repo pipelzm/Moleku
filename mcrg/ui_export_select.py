@@ -29,7 +29,20 @@ def _clean_df(df):
     return out
 
 
-def choose_export_dataframe(app, g: dict, *, title_key: str, ideal_df=None, manual_df=None):
+def choose_export_dataframe(
+    app,
+    g: dict,
+    *,
+    title_key: str,
+    ideal_df=None,
+    manual_df=None,
+    generated_df=None,
+    hint_key: str = "export_select_hint",
+    ideal_mode_key: str = "export_select_mode_ideal",
+    generated_mode_key: str = "export_select_mode_generated",
+    manual_mode_key: str = "export_select_mode_manual",
+    apply_key: str = "export_select_apply",
+):
     tk = g["tk"]
     messagebox = g["messagebox"]
     CL = g["CL"]
@@ -37,11 +50,13 @@ def choose_export_dataframe(app, g: dict, *, title_key: str, ideal_df=None, manu
 
     ideal_df = _clean_df(ideal_df)
     manual_df = _clean_df(manual_df)
+    generated_df = _clean_df(generated_df)
 
     has_ideal = ideal_df is not None and not getattr(ideal_df, "empty", True)
     has_manual = manual_df is not None and not getattr(manual_df, "empty", True)
+    has_generated = generated_df is not None and not getattr(generated_df, "empty", True)
 
-    if not has_ideal and not has_manual:
+    if not has_ideal and not has_manual and not has_generated:
         messagebox.showinfo("!", app.t("export_select_need_candidates"))
         return None
 
@@ -55,7 +70,7 @@ def choose_export_dataframe(app, g: dict, *, title_key: str, ideal_df=None, manu
     container = tk.Frame(dlg, bg=CL["bg2"], padx=14, pady=14)
     container.pack(fill="both", expand=True)
 
-    mode = tk.StringVar(value="ideal" if has_ideal else "manual")
+    mode = tk.StringVar(value="ideal" if has_ideal else ("generated" if has_generated else "manual"))
     result = {"df": None}
 
     lbl_title = app._lbl(
@@ -69,7 +84,7 @@ def choose_export_dataframe(app, g: dict, *, title_key: str, ideal_df=None, manu
 
     lbl_hint = app._lbl(
         container,
-        text=app.t("export_select_hint"),
+        text=app.t(hint_key),
         font=app._get_font(11),
         text_color=CL["dim"],
         fg_color=CL["bg2"] if HAS_CTK else None,
@@ -83,7 +98,7 @@ def choose_export_dataframe(app, g: dict, *, title_key: str, ideal_df=None, manu
 
     rb_ideal = tk.Radiobutton(
         fr_modes,
-        text=app.t("export_select_mode_ideal"),
+        text=app.t(ideal_mode_key),
         value="ideal",
         variable=mode,
         bg=CL["bg2"],
@@ -98,9 +113,26 @@ def choose_export_dataframe(app, g: dict, *, title_key: str, ideal_df=None, manu
     )
     rb_ideal.pack(anchor="w")
 
+    rb_generated = tk.Radiobutton(
+        fr_modes,
+        text=app.t(generated_mode_key),
+        value="generated",
+        variable=mode,
+        bg=CL["bg2"],
+        fg=CL["fg"],
+        selectcolor=CL["bg3"],
+        activebackground=CL["bg2"],
+        activeforeground=CL["fg"],
+        font=app._get_font(11),
+        anchor="w",
+        state="normal" if has_generated else "disabled",
+        command=lambda: _sync_state(),
+    )
+    rb_generated.pack(anchor="w", pady=(4, 0))
+
     rb_manual = tk.Radiobutton(
         fr_modes,
-        text=app.t("export_select_mode_manual"),
+        text=app.t(manual_mode_key),
         value="manual",
         variable=mode,
         bg=CL["bg2"],
@@ -198,6 +230,13 @@ def choose_export_dataframe(app, g: dict, *, title_key: str, ideal_df=None, manu
             result["df"] = ideal_df.copy() if hasattr(ideal_df, "copy") else ideal_df
             dlg.destroy()
             return
+        if mode.get() == "generated":
+            if not has_generated:
+                messagebox.showinfo("!", app.t("export_select_need_candidates"))
+                return
+            result["df"] = generated_df.copy() if hasattr(generated_df, "copy") else generated_df
+            dlg.destroy()
+            return
 
         if not has_manual:
             messagebox.showinfo("!", app.t("export_select_need_candidates"))
@@ -227,7 +266,7 @@ def choose_export_dataframe(app, g: dict, *, title_key: str, ideal_df=None, manu
 
     btn_ok = app._btn(
         fr_actions,
-        text=app.t("export_select_apply"),
+        text=app.t(apply_key),
         width=150,
         height=32,
         fg_color=CL["accent"],

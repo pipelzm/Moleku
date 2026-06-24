@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from .run_counts import format_run_counter
+
 
 def build_motor(app, g: dict):
     tk = g["tk"]
@@ -46,6 +48,13 @@ def build_motor(app, g: dict):
     if not HAS_CTK:
         app.lbl_info.config(fg=CL["info"], bg=CL["bg3"])
     app.lbl_info.pack(fill=X, padx=12, pady=8)
+
+    monitor = ctk.CTkFrame(inner, fg_color=CL["bg2"], corner_radius=6, border_width=1, border_color=CL["border"]) if HAS_CTK else tk.Frame(inner, bg=CL["bg2"])
+    monitor.pack(fill=X, padx=px, pady=(0, 6))
+    app.lbl_runtime_status = app._lbl(monitor, text="Runtime status loading", font=app._get_font(11), text_color=CL["info"], fg_color=CL["bg2"] if HAS_CTK else None)
+    app.lbl_runtime_status.pack(fill=X, padx=10, pady=(6, 1))
+    app.lbl_perf_status = app._lbl(monitor, text="CPU: n/a | RAM: n/a | GPU: n/a", font=app._get_font(11), text_color=CL["dim"], fg_color=CL["bg2"] if HAS_CTK else None)
+    app.lbl_perf_status.pack(fill=X, padx=10, pady=(1, 6))
 
     fr_mcr = app._frame(inner, fg_color=CL["bg"] if HAS_CTK else None)
     fr_mcr.pack(fill=X, padx=px, pady=(4, 6))
@@ -208,10 +217,9 @@ def build_motor(app, g: dict):
     except Exception:
         pass
 
-    app.lbl_combinations = app._lbl(inner, text="📊 Total: 0 | ✅ Ideal: 0 | ❌ Discarded: 0", font=app._get_font(12), text_color=CL["dim"])
+    app.lbl_combinations = app._lbl(inner, text=format_run_counter(None, None), font=app._get_font(12), text_color=CL["dim"])
     app.lbl_combinations.pack(fill=X, padx=px, pady=(2, 4))
 
     app.console = tk.Text(inner, height=8, wrap="none", font=("Menlo", 12), bg=CL["bg3"], fg=CL["dim"], insertbackground=CL["fg"], state=DISABLED, bd=0, padx=10, pady=6)
     app.console.pack(fill=X, padx=px, pady=(4, 14))
     app._refresh_slots()
-

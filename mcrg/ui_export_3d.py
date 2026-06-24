@@ -21,14 +21,21 @@ def exp_zip_3d(app, g: dict):
         messagebox.showinfo("!", app.t("no_datos"))
         return
     ideal_df = getattr(app, "df_ideal", None)
+    generated_df = None
+    try:
+        if "SMILES_Final" in df.columns:
+            generated_df = df[df["SMILES_Final"].fillna("").astype(str).str.len() > 0].copy()
+    except Exception:
+        generated_df = None
     manual_df = getattr(app, "df_admet_all", None)
     if manual_df is None or getattr(manual_df, "empty", True):
-        manual_df = ideal_df if ideal_df is not None and not getattr(ideal_df, "empty", True) else df
+        manual_df = generated_df if generated_df is not None and not getattr(generated_df, "empty", True) else (ideal_df if ideal_df is not None and not getattr(ideal_df, "empty", True) else df)
     df_src = choose_export_dataframe(
         app,
         g,
         title_key="export_select_title_3d",
         ideal_df=ideal_df,
+        generated_df=generated_df,
         manual_df=manual_df,
     )
     if df_src is None or getattr(df_src, "empty", True):
@@ -80,4 +87,3 @@ def exp_zip_3d(app, g: dict):
             app.root.after(0, lambda: messagebox.showerror("Error", str(ex)))
 
     threading.Thread(target=worker, daemon=True).start()
-

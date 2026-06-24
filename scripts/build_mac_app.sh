@@ -7,7 +7,19 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-PY="${PYTHON:-python3}"
+REQUESTED_PY="${PYTHON:-}"
+PY="${REQUESTED_PY:-python3}"
+if [[ "${MOLEKU_AUTODETECT_CONDA_PY:-1}" == "1" ]]; then
+  if [[ -z "$REQUESTED_PY" || "$REQUESTED_PY" == "python" ]]; then
+    CONDA_BASE="$(conda info --base 2>/dev/null || true)"
+    if [[ -n "$CONDA_BASE" ]]; then
+      CONDA_PY="$CONDA_BASE/envs/${MOLEKU_BUILD_ENV_NAME:-mcrg-build}/bin/python"
+      if [[ -x "$CONDA_PY" ]] && "$CONDA_PY" -c "import rdkit, PyInstaller" 2>/dev/null; then
+        PY="$CONDA_PY"
+      fi
+    fi
+  fi
+fi
 TARGET_ARCH="${MOLEKU_TARGET_ARCH:-$(uname -m)}"
 DIST_SUFFIX="${MOLEKU_DIST_SUFFIX:-}"
 APP_NAME="${MOLEKU_APP_NAME:-Moleku}"
@@ -15,9 +27,9 @@ SKIP_BUNDLE="${MOLEKU_SKIP_BUNDLE:-0}"
 if ! "$PY" -c "import rdkit, PyInstaller" 2>/dev/null; then
   echo "Need Python with rdkit and pyinstaller on PATH (e.g. conda-forge env)."
   echo "Example:"
-  echo "  mamba create -y -n moleku-build -c conda-forge python=3.11 rdkit pandas pillow pyinstaller"
-  echo "  mamba activate moleku-build && pip install customtkinter matplotlib numpy"
-  echo "  PYTHON=python scripts/build_mac_app.sh"
+  echo "  mamba create -y -n moleku-build -c conda-forge python=3.11 rdkit pandas pillow numpy openpyxl reportlab pyinstaller"
+  echo "  mamba activate moleku-build && pip install customtkinter matplotlib"
+  echo "  PYTHON=/path/to/conda/env/bin/python scripts/build_mac_app.sh"
   exit 1
 fi
 
@@ -34,7 +46,11 @@ ensure_admet_local_stack() {
     "pyinstaller-hooks-contrib>=2026.4" \
     "torch==2.2.2" \
     "admet-ai==1.3.1" \
-    py4j
+    py4j \
+    customtkinter \
+    matplotlib \
+    openpyxl \
+    reportlab
 }
 
 copy_legal_files() {

@@ -105,6 +105,7 @@ def update_labels(app, g: dict):
     _set_attr("btn_exportar_csv", text=app.t("exportar_csv"))
     _set_attr("btn_exportar_xlsx", text=app.t("exportar_xlsx"))
     _set_attr("btn_exportar_pdf", text=app.t("exportar_pdf"))
+    _set_attr("btn_export_table", text=app.t("export_table"))
     _set_attr("btn_exportar_custom_zip", text=app.t("exportar_custom_zip"))
     _set_attr("btn_exportar_zip", text=app.t("exportar_zip"))
     _set_attr("btn_exportar_bundle", text=app.t("exportar_bundle"))
@@ -156,4 +157,3 @@ def update_labels(app, g: dict):
     app.lbl_about_footer.configure(text=app.t("about_footer")) if HAS_CTK else app.lbl_about_footer.config(text=app.t("about_footer"))
     app._refresh_table_headings()
     app._switch_tab(app.current_tab)
-

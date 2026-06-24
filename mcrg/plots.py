@@ -100,16 +100,19 @@ def export_plots_paper_ready(
 
         elif key.endswith("by Classification"):
             ideal = _np.asarray(data.get("ideal", []), dtype=float)
-            discard = _np.asarray(data.get("discard", []), dtype=float)
+            warning = _np.asarray(data.get("warning", []), dtype=float)
+            error = _np.asarray(data.get("error", []), dtype=float)
             ideal = ideal[_np.isfinite(ideal)]
-            discard = discard[_np.isfinite(discard)]
-            if ideal.size + discard.size == 0:
+            warning = warning[_np.isfinite(warning)]
+            error = error[_np.isfinite(error)]
+            if ideal.size + warning.size + error.size == 0:
                 plt.close(fig)
                 continue
-            allv = _np.concatenate([ideal, discard]) if discard.size else ideal
+            allv = _np.concatenate([arr for arr in (ideal, warning, error) if arr.size])
             edges = _np.histogram_bin_edges(allv, bins=bins)
             ax.hist(ideal, bins=edges, density=True, alpha=0.75, label=t("ideal"), color=plot_settings.get("color_ideal", "#27ae60"))
-            ax.hist(discard, bins=edges, density=True, alpha=0.65, label=t("descartado"), color=plot_settings.get("color_discard", "#c0392b"))
+            ax.hist(warning, bins=edges, density=True, alpha=0.65, label=t("warning"), color=plot_settings.get("color_warning", "#d4a017"))
+            ax.hist(error, bins=edges, density=True, alpha=0.65, label=t("error"), color=plot_settings.get("color_discard", "#c0392b"))
             ax.set_ylabel("Density")
             ax.set_xlabel(get_xlabel(key))
             if plot_settings.get("show_legend", True):
@@ -122,8 +125,12 @@ def export_plots_paper_ready(
                 continue
             xs = _np.asarray([p[0] for p in pts], dtype=float)
             ys = _np.asarray([p[1] for p in pts], dtype=float)
-            is_ideal = _np.asarray([bool(p[2]) for p in pts], dtype=bool)
-            ax.scatter(xs[~is_ideal], ys[~is_ideal], s=10, alpha=0.65, c=plot_settings.get("color_discard", "#c0392b"), label=t("descartado"))
+            statuses = _np.asarray([str(p[2]) for p in pts], dtype=object)
+            is_ideal = statuses == "Ideal"
+            is_warning = statuses == "Warning"
+            is_error = ~(is_ideal | is_warning)
+            ax.scatter(xs[is_error], ys[is_error], s=10, alpha=0.65, c=plot_settings.get("color_discard", "#c0392b"), label=t("error"))
+            ax.scatter(xs[is_warning], ys[is_warning], s=11, alpha=0.70, c=plot_settings.get("color_warning", "#d4a017"), label=t("warning"))
             ax.scatter(xs[is_ideal], ys[is_ideal], s=12, alpha=0.75, c=plot_settings.get("color_ideal", "#27ae60"), label=t("ideal"))
             ax.set_xlabel("PC1")
             ax.set_ylabel("PC2")
@@ -135,9 +142,9 @@ def export_plots_paper_ready(
                 import csv as _csv
                 with open(coords_path, "w", newline="", encoding="utf-8") as f:
                     w = _csv.writer(f)
-                    w.writerow(["PC1", "PC2", "Classification"])
-                    for x, y, ok in pts:
-                        w.writerow([x, y, "Ideal" if ok else "Discarded"])
+                    w.writerow(["PC1", "PC2", "Review_Status"])
+                    for x, y, status in pts:
+                        w.writerow([x, y, status])
             except Exception:
                 coords_path = None
 
@@ -188,4 +195,3 @@ def export_plots_paper_ready(
 
     with open(os.path.join(folder, "plots_manifest.json"), "w", encoding="utf-8") as f:
         json.dump(manifest, f, ensure_ascii=False, indent=2)
-

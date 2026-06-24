@@ -70,6 +70,7 @@ def run_mcr(
         "Is_Duplicate",
         "Duplicate_Of",
         "Classification",
+        "Review_Status",
         "Core_Reagent",
         "Failure_Reason",
     ] + comps + comp_smiles_cols
@@ -129,6 +130,84 @@ def run_mcr(
     if not rxn:
         preview.append("❌ Invalid reaction SMARTS.")
         return empty_df, empty_df, "\n".join(preview)
+    rxn_variants = [rxn]
+    for extra_smarts in info.get("smarts_variants", []) or []:
+        try:
+            extra_rxn = AllChem.ReactionFromSmarts(extra_smarts)
+        except Exception:
+            extra_rxn = None
+        if extra_rxn:
+            rxn_variants.append(extra_rxn)
+
+    def _mol_matches_template(mol, template) -> bool:
+        try:
+            return bool(mol is not None and template is not None and mol.HasSubstructMatch(template))
+        except Exception:
+            return False
+
+    def _preflight_template_summary(insert_idx=None):
+        rows = []
+        if not _CHEM_READY:
+            return rows
+        for comp_i, comp in enumerate(comps):
+            lst = listas[comp_i] if comp_i < len(listas) else []
+            if not lst:
+                continue
+            matched = 0
+            unmatched = []
+            for name, smi in lst:
+                mol = parse_smiles_flexible(smi, Chem)
+                if not mol or not _safe_sanitize(mol):
+                    unmatched.append(str(name))
+                    continue
+                ok = False
+                for rxn_obj in rxn_variants:
+                    try:
+                        n_templates = int(rxn_obj.GetNumReactantTemplates())
+                    except Exception:
+                        continue
+                    if insert_idx is None:
+                        template_idx = comp_i
+                        expected = len(comps)
+                    else:
+                        template_idx = comp_i + (1 if comp_i >= int(insert_idx) else 0)
+                        expected = len(comps) + 1
+                    if n_templates != expected or template_idx >= n_templates:
+                        continue
+                    try:
+                        tmpl = rxn_obj.GetReactantTemplate(template_idx)
+                    except Exception:
+                        tmpl = None
+                    if _mol_matches_template(mol, tmpl):
+                        ok = True
+                        break
+                if ok:
+                    matched += 1
+                else:
+                    unmatched.append(str(name))
+            rows.append(
+                {
+                    "component": comp,
+                    "matched": int(matched),
+                    "total": int(len(lst)),
+                    "unmatched_examples": unmatched[:3],
+                }
+            )
+        return rows
+
+    def _append_preflight_to_preview(rows):
+        if not rows:
+            return
+        preview.append("🔎 Reaction preflight:")
+        for r in rows:
+            total = int(r.get("total", 0))
+            matched = int(r.get("matched", 0))
+            comp = str(r.get("component", ""))
+            msg = f"   - {comp}: {matched}/{total} rows match the reaction template"
+            examples = [x for x in r.get("unmatched_examples", []) if x]
+            if examples:
+                msg += " | outside pattern: " + ", ".join(examples)
+            preview.append(msg)
 
     def _safe_sanitize(m):
         try:
@@ -329,11 +408,9 @@ def run_mcr(
                 return m
         return None
 
-    def _find_core_insert_index(rxn_obj, listas_local, core_mol_obj):
-        try:
-            n_templates = int(rxn_obj.GetNumReactantTemplates())
-        except Exception:
-            n_templates = None
+    def _find_core_insert_index(rxn_objs, listas_local, core_mol_obj):
+        if not isinstance(rxn_objs, (list, tuple)):
+            rxn_objs = [rxn_objs]
 
         base_mols = []
         for lst in listas_local:
@@ -342,30 +419,208 @@ def run_mcr(
                 return 1
             base_mols.append(m)
 
-        if n_templates is not None and n_templates == len(base_mols):
-            return 1
+        for rxn_obj in rxn_objs:
+            try:
+                if int(rxn_obj.GetNumReactantTemplates()) == len(base_mols):
+                    return 1
+            except Exception:
+                continue
 
         for idx in range(0, len(base_mols) + 1):
             mols_try = base_mols.copy()
             mols_try.insert(idx, core_mol_obj)
-            if n_templates is not None and len(mols_try) != n_templates:
-                continue
-            try:
-                prods = rxn_obj.RunReactants(tuple(mols_try))
-                if prods:
-                    return idx
-            except Exception:
-                continue
+            for rxn_obj in rxn_objs:
+                try:
+                    n_templates = int(rxn_obj.GetNumReactantTemplates())
+                except Exception:
+                    n_templates = None
+                if n_templates is not None and len(mols_try) != n_templates:
+                    continue
+                try:
+                    prods = rxn_obj.RunReactants(tuple(mols_try))
+                    if prods:
+                        return idx
+                except Exception:
+                    continue
         return 1
+
+    def _first_sanitized_reaction_product(moles):
+        """
+        Try the primary reaction plus curated variants and return the first
+        product RDKit can sanitize. This prevents valid combinations from being
+        discarded when an earlier resonance/product candidate is not usable.
+        """
+        saw_products = False
+        saw_sanitize_failure = False
+        last_exception = ""
+        for rxn_obj in rxn_variants:
+            try:
+                product_sets = rxn_obj.RunReactants(tuple(moles))
+            except Exception as e:
+                last_exception = str(e)[:140]
+                continue
+            if product_sets:
+                saw_products = True
+            for product_set in product_sets:
+                if not product_set:
+                    continue
+                prod = _standardize_product(product_set[0])
+                if _safe_sanitize(prod):
+                    return prod, ""
+                saw_sanitize_failure = True
+        if saw_sanitize_failure:
+            return None, "Product sanitize failed"
+        if saw_products:
+            return None, "Product sanitize failed"
+        if last_exception:
+            return None, f"Reaction execution failed: {last_exception}"
+        return None, "No products generated by reaction SMARTS"
+
+    def _run_summary(df_all_local, df_ideal_local):
+        total = int(len(df_all_local)) if df_all_local is not None else 0
+        if df_all_local is None or getattr(df_all_local, "empty", True):
+            return {
+                "evaluated": total,
+                "products_valid": 0,
+                "ideal_raw": 0,
+                "ideal_unique": 0,
+                "warning": 0,
+                "error": 0,
+                "discarded": 0,
+                "reaction_failed": 0,
+                "rule_failed": 0,
+                "below_threshold": 0,
+                "duplicates": 0,
+                "failure_reasons": {},
+                "hints": [],
+            }
+        try:
+            cls = df_all_local["Classification"].astype(str) if "Classification" in df_all_local.columns else []
+            ideal_raw = int((cls == "Ideal").sum()) if len(cls) else 0
+        except Exception:
+            ideal_raw = 0
+        try:
+            status = df_all_local["Review_Status"].fillna("").astype(str) if "Review_Status" in df_all_local.columns else []
+            warning = int((status == "Warning").sum()) if len(status) else 0
+            error = int((status == "Error").sum()) if len(status) else 0
+        except Exception:
+            warning = 0
+            error = 0
+        try:
+            smiles = df_all_local["SMILES_Final"].fillna("").astype(str) if "SMILES_Final" in df_all_local.columns else []
+            products_valid = int((smiles.str.len() > 0).sum()) if len(smiles) else 0
+        except Exception:
+            products_valid = 0
+        try:
+            reasons = df_all_local["Failure_Reason"].fillna("").astype(str) if "Failure_Reason" in df_all_local.columns else []
+            failure_reasons = {str(k): int(v) for k, v in reasons.value_counts(dropna=False).items() if str(k)}
+            below_threshold = int(reasons.str.startswith("Below threshold").sum()) if len(reasons) else 0
+            rule_failed = int(reasons.str.startswith("Fails").sum()) if len(reasons) else 0
+            sanitize_failed = int((reasons == "Product sanitize failed").sum()) if len(reasons) else 0
+            no_products = int((reasons == "No products generated by reaction SMARTS").sum()) if len(reasons) else 0
+        except Exception:
+            failure_reasons = {}
+            below_threshold = rule_failed = sanitize_failed = no_products = 0
+        try:
+            duplicates = int((df_all_local["Is_Duplicate"] == True).sum()) if "Is_Duplicate" in df_all_local.columns else 0
+        except Exception:
+            duplicates = 0
+
+        discarded = int(total - ideal_raw)
+        reaction_failed = int(max(0, total - products_valid))
+        hints = []
+        if total and ideal_raw == 0 and products_valid == 0:
+            hints.append("No valid products were formed. Check whether each file contains reactants compatible with the selected reaction.")
+        elif total and ideal_raw == 0 and products_valid > 0:
+            hints.append("Products were formed, but filters classified all of them as Discarded. Try a lower threshold or a less strict Ideal criterion.")
+        if below_threshold:
+            hints.append("Some products are below the score threshold. Lower the threshold to inspect them in the Ideal view.")
+        if rule_failed:
+            hints.append(f"Some products fail the selected Ideal rule ({ideal_rule}). Switch to Any or another rule to compare.")
+        if mcr_key == "GBB (3-CR)" and no_products:
+            hints.append("GBB is sensitive to the aminoazine pattern. Aminoazines outside the supported 2-aminoazine core may not produce products.")
+        if mcr_key == "Gewald (3-CR)" and sanitize_failed:
+            hints.append("Gewald generated products for some combinations that RDKit could not sanitize; inspect alpha-substituted cyano partners first.")
+        return {
+            "evaluated": total,
+            "products_valid": int(products_valid),
+            "ideal_raw": int(ideal_raw),
+            "ideal_unique": int(len(df_ideal_local)) if df_ideal_local is not None else 0,
+            "warning": int(warning),
+            "error": int(error),
+            "discarded": discarded,
+            "reaction_failed": reaction_failed,
+            "rule_failed": int(rule_failed),
+            "below_threshold": int(below_threshold),
+            "duplicates": int(duplicates),
+            "failure_reasons": failure_reasons,
+            "hints": hints[:4],
+        }
+
+    def _append_run_summary_to_preview(summary):
+        preview.append(
+            "📊 Run summary: "
+            f"evaluated={summary.get('evaluated', 0)} | "
+            f"valid_products={summary.get('products_valid', 0)} | "
+            f"ideal_unique={summary.get('ideal_unique', 0)} | "
+            f"warnings={summary.get('warning', 0)} | "
+            f"errors={summary.get('error', 0)}"
+        )
+        reasons = summary.get("failure_reasons", {}) or {}
+        if reasons:
+            preview.append("🧭 Top discard/failure reasons:")
+            for reason, count in sorted(reasons.items(), key=lambda item: item[1], reverse=True)[:5]:
+                preview.append(f"   - {reason}: {count}")
+        for hint in summary.get("hints", []) or []:
+            preview.append(f"💡 {hint}")
+
+    def _discard_row(core_reagent, failure_reason, comp_name_map=None, comp_smiles_map=None):
+        row = {
+            "Compatibility_%": "",
+            "Molecular_Weight": "",
+            "LogP": "",
+            "TPSA": "",
+            "HBA": "",
+            "HBD": "",
+            "QED": "",
+            "Fsp3": "",
+            "PAINS_Alerts": "",
+            "Brenk_Alerts": "",
+            "Rotatable_Bonds": "",
+            "Heavy_Atoms": "",
+            "Ring_Count": "",
+            "Molar_Refractivity": "",
+            "Pass_Lipinski": False,
+            "Pass_Ghose": False,
+            "Pass_Veber": False,
+            "Pass_Egan": False,
+            "Pass_Muegge": False,
+            "Ideal_Rule": ideal_rule,
+            "SMILES_Final": "",
+            "InChIKey": "",
+            "Is_Duplicate": False,
+            "Duplicate_Of": "",
+            "Classification": "Discarded",
+            "Review_Status": "Error",
+            "Core_Reagent": core_reagent,
+            "Failure_Reason": failure_reason,
+        }
+        comp_name_map = comp_name_map or {}
+        comp_smiles_map = comp_smiles_map or {}
+        row.update({c: comp_name_map.get(c, "") for c in comps})
+        row.update({f"{c}_SMILES": comp_smiles_map.get(c, "") for c in comps})
+        return row
 
     results = []
     failed = 0
     total_combinations = 0
 
     if core_mols and len(listas) >= 1:
-        insert_idx = _find_core_insert_index(rxn, listas, core_mols[0][2])
+        insert_idx = _find_core_insert_index(rxn_variants, listas, core_mols[0][2])
         preview.append(f"ℹ Core reagent insertion index: {insert_idx}")
         preview.append("🧪 Core reagents selected: " + ", ".join([c[0] for c in core_mols]))
+        preflight_rows = _preflight_template_summary(insert_idx=insert_idx)
+        _append_preflight_to_preview(preflight_rows)
 
         combos_per_core = 1
         for lst in listas:
@@ -396,106 +651,16 @@ def run_mcr(
                             comp_name_map[comps[len(comp_name_map)]] = name
                     if not moles:
                         failed += 1
-                        row = {
-                            "Compatibility_%": "",
-                            "Molecular_Weight": "",
-                            "LogP": "",
-                            "TPSA": "",
-                            "HBA": "",
-                            "HBD": "",
-                            "QED": "",
-                            "Fsp3": "",
-                            "PAINS_Alerts": "",
-                            "Brenk_Alerts": "",
-                            "Rotatable_Bonds": "",
-                            "Heavy_Atoms": "",
-                            "Ring_Count": "",
-                            "Molar_Refractivity": "",
-                            "Pass_Lipinski": False,
-                            "Pass_Ghose": False,
-                            "Pass_Veber": False,
-                            "Pass_Egan": False,
-                            "Pass_Muegge": False,
-                            "Ideal_Rule": ideal_rule,
-                            "SMILES_Final": "",
-                            "Classification": "Discarded",
-                            "Core_Reagent": core_name,
-                            "Failure_Reason": "Invalid reactant (SMILES parse/sanitize failed)",
-                        }
-                        row.update({c: comp_name_map.get(c, "") for c in comps})
-                        row.update({f"{c}_SMILES": comp_smiles_map.get(c, "") for c in comps})
-                        results.append(row)
+                        results.append(_discard_row(core_name, "Invalid reactant (SMILES parse/sanitize failed)", comp_name_map, comp_smiles_map))
                         continue
 
                     moles.insert(insert_idx, core_mol)
                     names.insert(insert_idx, "Core")
 
-                    prods = rxn.RunReactants(tuple(moles))
-                    if not prods:
+                    prod, reaction_failure = _first_sanitized_reaction_product(moles)
+                    if prod is None:
                         failed += 1
-                        row = {
-                            "Compatibility_%": "",
-                            "Molecular_Weight": "",
-                            "LogP": "",
-                            "TPSA": "",
-                            "HBA": "",
-                            "HBD": "",
-                            "QED": "",
-                            "Fsp3": "",
-                            "PAINS_Alerts": "",
-                            "Brenk_Alerts": "",
-                            "Rotatable_Bonds": "",
-                            "Heavy_Atoms": "",
-                            "Ring_Count": "",
-                            "Molar_Refractivity": "",
-                            "Pass_Lipinski": False,
-                            "Pass_Ghose": False,
-                            "Pass_Veber": False,
-                            "Pass_Egan": False,
-                            "Pass_Muegge": False,
-                            "Ideal_Rule": ideal_rule,
-                            "SMILES_Final": "",
-                            "Classification": "Discarded",
-                            "Core_Reagent": core_name,
-                            "Failure_Reason": "No products generated by reaction SMARTS",
-                        }
-                        row.update({c: comp_name_map.get(c, "") for c in comps})
-                        row.update({f"{c}_SMILES": comp_smiles_map.get(c, "") for c in comps})
-                        results.append(row)
-                        continue
-
-                    prod = _standardize_product(prods[0][0])
-                    if not _safe_sanitize(prod):
-                        failed += 1
-                        row = {
-                            "Compatibility_%": "",
-                            "Molecular_Weight": "",
-                            "LogP": "",
-                            "TPSA": "",
-                            "HBA": "",
-                            "HBD": "",
-                            "QED": "",
-                            "Fsp3": "",
-                            "PAINS_Alerts": "",
-                            "Brenk_Alerts": "",
-                            "Rotatable_Bonds": "",
-                            "Heavy_Atoms": "",
-                            "Ring_Count": "",
-                            "Molar_Refractivity": "",
-                            "Pass_Lipinski": False,
-                            "Pass_Ghose": False,
-                            "Pass_Veber": False,
-                            "Pass_Egan": False,
-                            "Pass_Muegge": False,
-                            "Ideal_Rule": ideal_rule,
-                            "SMILES_Final": "",
-                            "Classification": "Discarded",
-                            "Core_Reagent": core_name,
-                            "Failure_Reason": "Product sanitize failed",
-                        }
-                        row.update({c: comp_name_map.get(c, "") for c in comps})
-                        row.update({f"{c}_SMILES": comp_smiles_map.get(c, "") for c in comps})
-                        results.append(row)
+                        results.append(_discard_row(core_name, reaction_failure, comp_name_map, comp_smiles_map))
                         continue
 
                     metrics = _druglikeness_metrics(prod) or {}
@@ -515,6 +680,7 @@ def run_mcr(
                             "Is_Duplicate": False,
                             "Duplicate_Of": "",
                             "Classification": "Discarded",
+                            "Review_Status": "Warning",
                             "Core_Reagent": core_name,
                             "Failure_Reason": f"Below threshold ({threshold:.1f})",
                         }
@@ -533,6 +699,7 @@ def run_mcr(
                         "Is_Duplicate": False,
                         "Duplicate_Of": "",
                         "Classification": "Ideal" if ideal else "Discarded",
+                        "Review_Status": "Ideal" if ideal else "Warning",
                         "Core_Reagent": core_name,
                         "Failure_Reason": "" if ideal else _rule_fail_reason(),
                     }
@@ -550,11 +717,14 @@ def run_mcr(
                         "HBD": "",
                         "SMILES_Final": "",
                         "Classification": "Discarded",
+                        "Review_Status": "Error",
                         "Core_Reagent": core_name,
                         "Failure_Reason": f"Exception: {str(e)[:140]}",
                     }
                     results.append(row)
     else:
+        preflight_rows = _preflight_template_summary(insert_idx=None)
+        _append_preflight_to_preview(preflight_rows)
         combos_per_core = 1
         for lst in listas:
             combos_per_core *= max(1, len(lst))
@@ -571,35 +741,7 @@ def run_mcr(
                 comp_smiles_map = {comps[i]: combo[i][1] for i in range(min(len(comps), len(combo)))}
                 if not all(moles):
                     failed += 1
-                    row = {
-                        "Compatibility_%": "",
-                        "Molecular_Weight": "",
-                        "LogP": "",
-                        "TPSA": "",
-                        "HBA": "",
-                        "HBD": "",
-                        "QED": "",
-                        "Fsp3": "",
-                        "PAINS_Alerts": "",
-                        "Brenk_Alerts": "",
-                        "Rotatable_Bonds": "",
-                        "Heavy_Atoms": "",
-                        "Ring_Count": "",
-                        "Molar_Refractivity": "",
-                        "Pass_Lipinski": False,
-                        "Pass_Ghose": False,
-                        "Pass_Veber": False,
-                        "Pass_Egan": False,
-                        "Pass_Muegge": False,
-                        "Ideal_Rule": ideal_rule,
-                        "SMILES_Final": "",
-                        "Classification": "Discarded",
-                        "Core_Reagent": "N/A",
-                        "Failure_Reason": "Invalid reactant (SMILES parse failed)",
-                    }
-                    row.update({c: comp_name_map.get(c, "") for c in comps})
-                    row.update({f"{c}_SMILES": comp_smiles_map.get(c, "") for c in comps})
-                    results.append(row)
+                    results.append(_discard_row("N/A", "Invalid reactant (SMILES parse failed)", comp_name_map, comp_smiles_map))
                     continue
                 ok = True
                 for m in moles:
@@ -608,101 +750,12 @@ def run_mcr(
                         break
                 if not ok:
                     failed += 1
-                    row = {
-                        "Compatibility_%": "",
-                        "Molecular_Weight": "",
-                        "LogP": "",
-                        "TPSA": "",
-                        "HBA": "",
-                        "HBD": "",
-                        "QED": "",
-                        "Fsp3": "",
-                        "PAINS_Alerts": "",
-                        "Brenk_Alerts": "",
-                        "Rotatable_Bonds": "",
-                        "Heavy_Atoms": "",
-                        "Ring_Count": "",
-                        "Molar_Refractivity": "",
-                        "Pass_Lipinski": False,
-                        "Pass_Ghose": False,
-                        "Pass_Veber": False,
-                        "Pass_Egan": False,
-                        "Pass_Muegge": False,
-                        "Ideal_Rule": ideal_rule,
-                        "SMILES_Final": "",
-                        "Classification": "Discarded",
-                        "Core_Reagent": "N/A",
-                        "Failure_Reason": "Invalid reactant (sanitize failed)",
-                    }
-                    row.update({c: comp_name_map.get(c, "") for c in comps})
-                    row.update({f"{c}_SMILES": comp_smiles_map.get(c, "") for c in comps})
-                    results.append(row)
+                    results.append(_discard_row("N/A", "Invalid reactant (sanitize failed)", comp_name_map, comp_smiles_map))
                     continue
-                prods = rxn.RunReactants(tuple(moles))
-                if not prods:
+                prod, reaction_failure = _first_sanitized_reaction_product(moles)
+                if prod is None:
                     failed += 1
-                    row = {
-                        "Compatibility_%": "",
-                        "Molecular_Weight": "",
-                        "LogP": "",
-                        "TPSA": "",
-                        "HBA": "",
-                        "HBD": "",
-                        "QED": "",
-                        "Fsp3": "",
-                        "PAINS_Alerts": "",
-                        "Brenk_Alerts": "",
-                        "Rotatable_Bonds": "",
-                        "Heavy_Atoms": "",
-                        "Ring_Count": "",
-                        "Molar_Refractivity": "",
-                        "Pass_Lipinski": False,
-                        "Pass_Ghose": False,
-                        "Pass_Veber": False,
-                        "Pass_Egan": False,
-                        "Pass_Muegge": False,
-                        "Ideal_Rule": ideal_rule,
-                        "SMILES_Final": "",
-                        "Classification": "Discarded",
-                        "Core_Reagent": "N/A",
-                        "Failure_Reason": "No products generated by reaction SMARTS",
-                    }
-                    row.update({c: comp_name_map.get(c, "") for c in comps})
-                    row.update({f"{c}_SMILES": comp_smiles_map.get(c, "") for c in comps})
-                    results.append(row)
-                    continue
-                prod = _standardize_product(prods[0][0])
-                if not _safe_sanitize(prod):
-                    failed += 1
-                    row = {
-                        "Compatibility_%": "",
-                        "Molecular_Weight": "",
-                        "LogP": "",
-                        "TPSA": "",
-                        "HBA": "",
-                        "HBD": "",
-                        "QED": "",
-                        "Fsp3": "",
-                        "PAINS_Alerts": "",
-                        "Brenk_Alerts": "",
-                        "Rotatable_Bonds": "",
-                        "Heavy_Atoms": "",
-                        "Ring_Count": "",
-                        "Molar_Refractivity": "",
-                        "Pass_Lipinski": False,
-                        "Pass_Ghose": False,
-                        "Pass_Veber": False,
-                        "Pass_Egan": False,
-                        "Pass_Muegge": False,
-                        "Ideal_Rule": ideal_rule,
-                        "SMILES_Final": "",
-                        "Classification": "Discarded",
-                        "Core_Reagent": "N/A",
-                        "Failure_Reason": "Product sanitize failed",
-                    }
-                    row.update({c: comp_name_map.get(c, "") for c in comps})
-                    row.update({f"{c}_SMILES": comp_smiles_map.get(c, "") for c in comps})
-                    results.append(row)
+                    results.append(_discard_row("N/A", reaction_failure, comp_name_map, comp_smiles_map))
                     continue
 
                 metrics = _druglikeness_metrics(prod) or {}
@@ -721,6 +774,7 @@ def run_mcr(
                         "Is_Duplicate": False,
                         "Duplicate_Of": "",
                         "Classification": "Discarded",
+                        "Review_Status": "Warning",
                         "Core_Reagent": "N/A",
                         "Failure_Reason": f"Below threshold ({threshold:.1f})",
                     }
@@ -739,6 +793,7 @@ def run_mcr(
                     "Is_Duplicate": False,
                     "Duplicate_Of": "",
                     "Classification": "Ideal" if ideal else "Discarded",
+                    "Review_Status": "Ideal" if ideal else "Warning",
                     "Core_Reagent": "N/A",
                     "Failure_Reason": "" if ideal else _rule_fail_reason(),
                 }
@@ -756,12 +811,24 @@ def run_mcr(
                     "HBD": "",
                     "SMILES_Final": "",
                     "Classification": "Discarded",
+                    "Review_Status": "Error",
                     "Core_Reagent": "N/A",
                     "Failure_Reason": f"Exception: {str(e)[:140]}",
                 }
                 results.append(row)
 
     df_all = pd.DataFrame(results) if results else empty_df
+    try:
+        if "Review_Status" not in df_all.columns:
+            if "SMILES_Final" in df_all.columns:
+                df_all["Review_Status"] = [
+                    "Ideal" if str(row.get("Classification", "")) == "Ideal" else ("Warning" if str(row.get("SMILES_Final", "") or "").strip() else "Error")
+                    for _, row in df_all.iterrows()
+                ]
+            else:
+                df_all["Review_Status"] = ""
+    except Exception:
+        pass
 
     # Add chirality/stereo summary + InChIKey + duplicate flags (does not change row count).
     try:
@@ -863,11 +930,20 @@ def run_mcr(
             pass
         df_ideal = df_ideal.sort_values("Compatibility_%", ascending=False)
 
-    preview.append(f"✅ {len(df_ideal)} products | ❌ {failed} failed | 📊 Total evaluated: {total_combinations}")
+    summary = _run_summary(df_all, df_ideal)
+    _append_run_summary_to_preview(summary)
+    preview.append(
+        f"✅ {len(df_ideal)} Ideal | ⚠ {summary.get('warning', 0)} Warning | "
+        f"❌ {summary.get('error', failed)} Error | 📊 Total evaluated: {total_combinations}"
+    )
     try:
-        if "_input_qc" in locals() and hasattr(df_all, "attrs"):
-            df_all.attrs["input_qc"] = _input_qc
+        if hasattr(df_all, "attrs"):
+            if "_input_qc" in locals():
+                df_all.attrs["input_qc"] = _input_qc
+            df_all.attrs["preflight"] = preflight_rows if "preflight_rows" in locals() else []
+            df_all.attrs["run_summary"] = summary
+        if hasattr(df_ideal, "attrs"):
+            df_ideal.attrs["run_summary"] = summary
     except Exception:
         pass
     return df_all, df_ideal, "\n".join(preview)
-

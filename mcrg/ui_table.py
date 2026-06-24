@@ -11,13 +11,28 @@ def apply_filter(app, g: dict):
     v = app.filter_var.get()
     if v == "Ideal":
         df = app.df_ideal
-    elif v == "Discard":
-        df = app.df_all[app.df_all["Classification"] != "Ideal"] if app.df_all is not None else None
+    elif v == "Warning":
+        if app.df_all is not None and "Review_Status" in app.df_all.columns:
+            df = app.df_all[app.df_all["Review_Status"] == "Warning"]
+        elif app.df_all is not None and "SMILES_Final" in app.df_all.columns:
+            df = app.df_all[(app.df_all["Classification"] != "Ideal") & (app.df_all["SMILES_Final"].fillna("").astype(str).str.len() > 0)]
+        else:
+            df = None
+    elif v in ("Error", "Discard"):
+        if app.df_all is not None and "Review_Status" in app.df_all.columns:
+            df = app.df_all[app.df_all["Review_Status"] == "Error"]
+        elif app.df_all is not None and "SMILES_Final" in app.df_all.columns:
+            df = app.df_all[(app.df_all["Classification"] != "Ideal") & (app.df_all["SMILES_Final"].fillna("").astype(str).str.len() == 0)]
+        else:
+            df = None
+    elif v == "Generated":
+        df = app.df_all[app.df_all["SMILES_Final"].fillna("").astype(str).str.len() > 0] if app.df_all is not None and "SMILES_Final" in app.df_all.columns else None
     else:
         df = app.df_all
 
     core_cols = [
         "Compatibility_%",
+        "Review_Status",
         "Classification",
         "Failure_Reason",
         "SMILES_Final",
@@ -72,10 +87,17 @@ def apply_filter(app, g: dict):
         return
 
     for _, row in df.iterrows():
-        tag = "ideal" if row.get("Classification") == "Ideal" else "desc"
+        status = str(row.get("Review_Status", "") or "")
+        if status == "Warning":
+            tag = "warning"
+        elif status == "Error":
+            tag = "error"
+        else:
+            tag = "ideal" if row.get("Classification") == "Ideal" else "error"
         app.tree.insert("", END, values=[str(row.get(c, "")) for c in cols], tags=(tag,))
     app.tree.tag_configure("ideal", foreground=PLOT_SETTINGS["color_ideal"])
-    app.tree.tag_configure("desc", foreground=PLOT_SETTINGS["color_discard"])
+    app.tree.tag_configure("warning", foreground=PLOT_SETTINGS.get("color_warning", "#d4a017"))
+    app.tree.tag_configure("error", foreground=PLOT_SETTINGS["color_discard"])
     app._update_results_counter()
 
 
@@ -164,4 +186,3 @@ def on_tree_select(app, g: dict, event):
         app.canvas_2d.create_text(cx, cy, text=msg, fill="#888", font=app._get_font(13), justify=CENTER)
         if err == "RDKit/Pillow still loading":
             app.root.after(600, lambda: app._on_tree_select(None))
-

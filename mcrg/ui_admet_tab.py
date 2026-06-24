@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from .ui_export_select import choose_export_dataframe
+from .ui_exports_simple import choose_table_export_options, export_dataframe
 
 
 def build_admet(app, g: dict):
@@ -32,6 +32,10 @@ def build_admet(app, g: dict):
     top.pack(fill=X, pady=(0, 10))
     app.lbl_admet_hint = app._lbl(top, text="", font=app._get_font(12), text_color=CL["dim"], wraplength=900, justify=LEFT)
     app.lbl_admet_hint.pack(fill=X, anchor=W)
+    app.lbl_admet_runtime_status = app._lbl(top, text="Runtime status loading", font=app._get_font(11), text_color=CL["info"], wraplength=900, justify=LEFT)
+    app.lbl_admet_runtime_status.pack(fill=X, anchor=W, pady=(6, 0))
+    app.lbl_admet_perf_status = app._lbl(top, text="CPU: n/a | RAM: n/a | GPU: n/a", font=app._get_font(11), text_color=CL["dim"], wraplength=900, justify=LEFT)
+    app.lbl_admet_perf_status.pack(fill=X, anchor=W, pady=(2, 0))
 
     app.lbl_admet_rstats = app._lbl(root, text="", font=app._get_font(12), text_color=CL["dim"])
     app.lbl_admet_rstats.pack(fill=X, pady=(0, 10))
@@ -176,22 +180,11 @@ def build_admet(app, g: dict):
         hover_color=CL["border"],
         text_color=CL["fg"],
         font=app._get_font(12),
-        command=app._admet_predict_ideal_local,
+        command=app._admet_predict_results_local,
     )
     app.btn_admet_use_ideal.grid(row=0, column=1, sticky="ew", padx=(6, 0), pady=(0, 8))
 
-    app.btn_admet_export_zip = app._btn(
-        fr_actions,
-        text="",
-        width=190,
-        height=34,
-        fg_color=CL["bg3"],
-        hover_color=CL["border"],
-        text_color=CL["fg"],
-        font=app._get_font(12),
-        command=app._exp_zip,
-    )
-    app.btn_admet_export_zip.grid(row=1, column=0, sticky="ew", padx=(0, 6), pady=(0, 8))
+    app.btn_admet_export_zip = None
 
     app.btn_admet_export_csv_tab = app._btn(
         fr_actions,
@@ -204,7 +197,7 @@ def build_admet(app, g: dict):
         font=app._get_font(12),
         command=app._export_admet_csv,
     )
-    app.btn_admet_export_csv_tab.grid(row=1, column=1, sticky="ew", padx=(6, 0), pady=(0, 8))
+    app.btn_admet_export_csv_tab.grid(row=1, column=0, columnspan=2, sticky="ew", padx=(0, 0), pady=(0, 8))
 
     info_header = app._frame(info_card, fg_color=CL["bg2"] if HAS_CTK else None)
     info_header.pack(fill=X, padx=16, pady=(14, 8))
@@ -524,11 +517,11 @@ def refresh_admet_labels(app, g: dict):
     _set_attr("lbl_admet_info_title", text=app.t("admet_info_title"))
     _set_attr("lbl_admet_info_hint", text=app.t("admet_info_hint"))
     _set_attr("btn_admet_run_input", text=app.t("admet_tab_run_input"))
-    _set_attr("btn_admet_use_ideal", text=app.t("admet_tab_use_ideal"))
+    _set_attr("btn_admet_use_ideal", text=app.t("admet_tab_use_results"))
     _set_attr("btn_admet_export_zip", text=app.t("exportar_zip"))
     _set_attr("lbl_admet_search", text=app.t("admet_tab_search"))
     _set_attr("btn_admet_search_clear", text=app.t("admet_tab_search_clear"))
-    _set_attr("btn_admet_export_csv_tab", text=app.t("admet_export_csv"))
+    _set_attr("btn_admet_export_csv_tab", text=app.t("admet_export"))
 
     for p in getattr(app, "_admet_help_panels", []):
         try:
@@ -575,43 +568,26 @@ def clear_admet_view(app, g: dict):
 
 
 def export_admet_csv(app, g: dict):
-    filedialog = g["filedialog"]
     messagebox = g["messagebox"]
 
     df = getattr(app, "df_admet_all", None)
     if df is None or getattr(df, "empty", True):
         messagebox.showinfo("!", app.t("admet_tab_no_predictions"))
         return
-    ideal_df = None
-    try:
-        if "Classification" in df.columns:
-            ideal_df = df[df["Classification"].astype(str) == "Ideal"].copy()
-        elif getattr(app, "df_ideal", None) is not None and "SMILES_Final" in df.columns:
-            ideal_values = []
-            try:
-                if "SMILES_Final" in app.df_ideal.columns:
-                    ideal_values = app.df_ideal["SMILES_Final"].tolist()
-            except Exception:
-                ideal_values = []
-            ideal_smiles = {str(s).strip() for s in ideal_values if str(s).strip()}
-            if ideal_smiles:
-                ideal_df = df[df["SMILES_Final"].astype(str).isin(ideal_smiles)].copy()
-    except Exception:
-        ideal_df = None
-    df_export = choose_export_dataframe(
+    opts = choose_table_export_options(
         app,
         g,
-        title_key="export_select_title_admet",
-        ideal_df=ideal_df,
-        manual_df=df,
+        title_key="admet_export_title",
+        hint_key="admet_export_hint",
+        df_all=df,
+        formats=("csv", "xlsx", "pdf") if bool(getattr(app, "features", {}).get("export_pdf", False)) else ("csv", "xlsx"),
     )
-    if df_export is None or getattr(df_export, "empty", True):
+    if not opts:
         return
-    fp = filedialog.asksaveasfilename(defaultextension=".csv", filetypes=[("CSV", "*.csv")])
-    if not fp:
-        return
-    try:
-        df_export.to_csv(fp, index=False)
-        messagebox.showinfo("OK", f"{app.t('saved')} {fp}")
-    except Exception as ex:
-        messagebox.showerror("Error", str(ex))
+    export_dataframe(
+        app,
+        g,
+        opts["df"],
+        opts["format"],
+        initial_prefix=f"moleku_admet_{str(opts['scope']).lower()}",
+    )

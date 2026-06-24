@@ -3,6 +3,9 @@ from __future__ import annotations
 import re
 import sys
 
+from .ui_export_select import choose_export_dataframe
+from .ui_exports_simple import filter_df_by_scope
+
 
 def _looks_like_smiles(text: str) -> bool:
     s = str(text or "").strip()
@@ -133,6 +136,40 @@ def _ideal_source_df(app):
         return source_df, smiles
     except Exception:
         return None, []
+
+
+def _generated_source_df(app):
+    df_all = getattr(app, "df_all", None)
+    if df_all is None or getattr(df_all, "empty", True):
+        return None, []
+    try:
+        source_df = filter_df_by_scope(df_all, "Generated")
+        if source_df is None or getattr(source_df, "empty", True):
+            return None, []
+        if "SMILES_Final" not in source_df.columns:
+            return None, []
+        source_df = source_df.drop_duplicates(subset=["SMILES_Final"], keep="first")
+        source_df["Candidate_Name"] = [
+            str(v).strip() if str(v).strip() else f"Candidate_{i+1:03d}"
+            for i, v in enumerate(source_df.get("Candidate_Name", []))
+        ]
+        smiles = [str(x).strip() for x in source_df["SMILES_Final"].tolist() if str(x).strip()]
+        if not smiles:
+            return None, []
+        return source_df, smiles
+    except Exception:
+        return None, []
+
+
+def _smiles_from_source_df(source_df):
+    if source_df is None or getattr(source_df, "empty", True):
+        return []
+    if "SMILES_Final" not in getattr(source_df, "columns", []):
+        return []
+    try:
+        return [str(x).strip() for x in source_df["SMILES_Final"].tolist() if str(x).strip()]
+    except Exception:
+        return []
 
 
 def _pasted_source_df(smiles_text: str):
@@ -300,6 +337,29 @@ def admet_predict_ideal_local(app, g: dict):
     return _run_admet_prediction(app, g, source_df, smiles, app.t("admet_tab_no_ideal_results"))
 
 
+def admet_predict_results_local(app, g: dict):
+    ideal_df, _ = _ideal_source_df(app)
+    generated_df, _ = _generated_source_df(app)
+    manual_df = generated_df
+    source_df = choose_export_dataframe(
+        app,
+        g,
+        title_key="admet_select_title_results",
+        hint_key="admet_select_hint_results",
+        ideal_df=ideal_df,
+        generated_df=generated_df,
+        manual_df=manual_df,
+        ideal_mode_key="admet_select_mode_ideal",
+        generated_mode_key="admet_select_mode_generated",
+        manual_mode_key="admet_select_mode_manual",
+        apply_key="export_select_apply_use",
+    )
+    if source_df is None:
+        return
+    smiles = _smiles_from_source_df(source_df)
+    return _run_admet_prediction(app, g, source_df, smiles, app.t("admet_tab_no_results_generated"))
+
+
 def admet_predict_pasted_local(app, g: dict, smiles_text: str):
     source_df, smiles = _pasted_source_df(smiles_text)
     return _run_admet_prediction(app, g, source_df, smiles, app.t("admet_tab_no_input_smiles"))
@@ -333,4 +393,3 @@ def show_admet_predictions(app, g: dict, preds_df, source_df=None, source_smiles
         app._switch_tab("admet")
     except Exception as ex:
         messagebox.showerror("Error", str(ex))
-

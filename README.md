@@ -24,17 +24,39 @@ Moleku combines reaction-based virtual enumeration with practical cheminformatic
 - duplicate detection through `InChIKey`
 - integrated `ADMET` tab with local prediction workflow
 - 2D structure inspection and searchable candidate review
-- export to CSV, XLSX, PDF, ADMET CSV, and 3D ZIP conformer bundles
+- export to CSV, XLSX, PDF, ADMET tables, and 3D ZIP conformer bundles
 
 ## Supported core workflows
 
-`Moleku v1.0` currently focuses on three 3-component MCR workflows:
+`Moleku v1.1.0` currently focuses on three 3-component MCR workflows:
 
 - `Biginelli (3-CR)`
 - `GBB (3-CR)`
 - `Gewald (3-CR)`
 
 Each workflow can be combined with curated example templates and reaction-ready packs provided in the application.
+
+## Powered by
+
+| Layer | Dependencies |
+|---|---|
+| **Cheminformatics** | ![RDKit](https://img.shields.io/badge/powered%20by-RDKit-4c8bf5) |
+| **Data** | ![pandas](https://img.shields.io/badge/powered%20by-pandas-150458) ![NumPy](https://img.shields.io/badge/powered%20by-NumPy-013243) |
+| **Desktop UI** | ![Tk](https://img.shields.io/badge/GUI-Tkinter-2c3e50) ![CustomTkinter](https://img.shields.io/badge/GUI-CustomTkinter-1f6feb) |
+| **Plots / reports** | ![matplotlib](https://img.shields.io/badge/plots-matplotlib-11557c) ![ReportLab](https://img.shields.io/badge/PDF-ReportLab-0b7285) |
+| **Office export** | ![openpyxl](https://img.shields.io/badge/XLSX-openpyxl-217346) |
+| **Local ADMET (bundled builds)** | ![admet-ai](https://img.shields.io/badge/ADMET-admet--ai-6a00ff) ![PyTorch](https://img.shields.io/badge/ML-PyTorch-ee4c2c) ![Chemprop](https://img.shields.io/badge/ML-Chemprop-6c757d) |
+
+### Bundled dependency baseline
+
+The current Moleku v1.1.0 macOS build was validated with:
+
+| Package | Version |
+|---|---:|
+| RDKit | 2026.03.1 |
+| pandas | 2.1.4 |
+| NumPy | 1.26.4 |
+| Chemprop | 1.6.1 |
 
 ## Main capabilities
 
@@ -58,19 +80,18 @@ For generated products, Moleku computes common descriptors and supports heuristi
 The `ADMET` tab is designed as an in-app search and review environment:
 
 - paste one or more SMILES directly
-- import Ideal candidates from generated results
+- import generated Ideal/Warning candidates from Results
 - inspect local ADMET outputs without popup windows
 - search previously computed candidates
-- export all Ideal candidates or a selected subset
+- export analyzed ADMET tables as CSV, XLSX, or PDF
 
 ### Export workflows
 
 Moleku can export:
 
-- result tables (`CSV`, `XLSX`)
-- report-ready `PDF`
-- local `ADMET CSV`
-- `3D ZIP` conformer bundles (`SDF`)
+- result tables through `Export Table` (`CSV`, `XLSX`, `PDF`)
+- local ADMET tables (`CSV`, `XLSX`, `PDF`)
+- `3D ZIP` conformer bundles (`SDF`) for selected generated structures with SMILES
 
 Additional methodological context is documented in `METHODS.md`.
 
@@ -87,9 +108,9 @@ python mcrg_desktop.py
 ### Recommended development stack
 
 ```bash
-mamba create -y -n moleku -c conda-forge python=3.11 rdkit pandas pillow numpy
+mamba create -y -n moleku -c conda-forge python=3.11 rdkit pandas pillow numpy openpyxl reportlab
 mamba activate moleku
-pip install customtkinter matplotlib openpyxl reportlab
+pip install customtkinter matplotlib
 ```
 
 For local ADMET predictions:
@@ -111,7 +132,7 @@ pyinstaller --clean --noconfirm mcrg.spec
 For macOS app bundles:
 
 ```bash
-bash scripts/build_mac_app.sh
+PYTHON=/opt/anaconda3/envs/mcrg-build/bin/python bash scripts/build_mac_app.sh
 ```
 
 Current packaged outputs include:

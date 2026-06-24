@@ -42,3 +42,15 @@ Estas plantillas mezclan varios estilos de escritura SMILES que Moleku acepta en
 3. **Reactivo central** → **Azufre (S₈)** (viene marcado por defecto).
 
 Ajusta el `Score threshold` y la **Ideal criterion** (Lipinski por defecto). Click en **▶ Start virtual generation**.
+
+## Cobertura esperada con los packs oficiales
+
+Referencia validada con los CSV de esta carpeta, `Score threshold = 0.0` e `Ideal criterion = Lipinski`.
+
+| Reacción | Archivos / core | Intentos evaluados | Ideal esperados | Lectura rápida |
+|----------|------------------|-------------------:|----------------:|----------------|
+| Biginelli | `aldehydes.csv` + `beta_ketoesters.csv` + Urea | 63 | 63 | Pack completamente compatible |
+| GBB | `aldehydes.csv` + `isocyanides.csv` + `aminoazines.csv` | 504 | 231 | Algunas aminoazinas quedan fuera del patrón GBB soportado |
+| Gewald | `ketones.csv` + `cyanoesters.csv` + Azufre (S8) | 54 | 45 | Algunos pares generan productos no sanitizables |
+
+Si una corrida oficial entrega `0 Ideal`, revisa primero que el umbral esté en `0.0`, que los archivos correspondan a la reacción elegida y que el reactivo central esté seleccionado cuando aplique.

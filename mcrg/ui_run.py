@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from .run_counts import format_run_counter
+
 
 def run_clicked(app, g: dict):
     # This is the extracted body of MCRGApp._run
@@ -65,6 +67,8 @@ def run_clicked(app, g: dict):
         app._last_run_context = {
             "mcr": mcr,
             "threshold": float(thr),
+            "ideal_rule": str(app.ideal_rule_var.get()),
+            "standardize": bool(app.standardize_var.get()),
             "component_files": {c: app.file_paths.get(c, "") for c in MCR_CATALOGO[mcr]["componentes"]},
             "core_reagents": list(core_smiles_list),
         }
@@ -125,7 +129,8 @@ def run_clicked(app, g: dict):
                 app.total_generated = na
                 app.total_discarded = na - ni
                 (app.lbl_status.configure(text=f"{app.t('listo')} {na} {app.t('productos')}") if HAS_CTK else app.lbl_status.config(text=f"{app.t('listo')} {na} {app.t('productos')}"))
-                (app.lbl_combinations.configure(text=f"📊 Total: {app.total_generated} | ✅ Ideal: {app.total_generated - app.total_discarded} | ❌ Discarded: {app.total_discarded}") if HAS_CTK else app.lbl_combinations.config(text=f"📊 Total: {app.total_generated} | ✅ Ideal: {app.total_generated - app.total_discarded} | ❌ Discarded: {app.total_discarded}"))
+                counter_txt = format_run_counter(df_all, df_ideal)
+                (app.lbl_combinations.configure(text=counter_txt) if HAS_CTK else app.lbl_combinations.config(text=counter_txt))
                 app.console.config(state=g["NORMAL"])
                 app.console.delete("1.0", g["END"])
                 app.console.insert(g["END"], preview)
@@ -146,4 +151,3 @@ def run_clicked(app, g: dict):
             app.root.after(0, lambda: (app.btn_start.configure(state="normal") if HAS_CTK else app.btn_start.config(state=NORMAL)))
 
     threading.Thread(target=worker, daemon=True).start()
-

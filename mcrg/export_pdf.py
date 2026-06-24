@@ -13,8 +13,9 @@ def export_pdf(app, g: dict, df, fp: str):
         )
         return
 
-    cols = [
+    preferred_cols = [
         "Compatibility_%",
+        "Review_Status",
         "Molecular_Weight",
         "LogP",
         "TPSA",
@@ -32,7 +33,8 @@ def export_pdf(app, g: dict, df, fp: str):
         "Classification",
         "SMILES_Final",
     ]
-    cols = [c for c in cols if c in df.columns]
+    cols = [c for c in preferred_cols if c in df.columns]
+    cols.extend([c for c in getattr(df, "columns", []) if c not in cols])
 
     def safe_str(v):
         if v is None:
@@ -61,28 +63,39 @@ def export_pdf(app, g: dict, df, fp: str):
         y -= 10
 
         line_height = 10
-        max_chars = 220
+        max_chars = 180
+
+        def _new_page():
+            nonlocal y
+            c.showPage()
+            y = top
+            c.setFont("Helvetica-Bold", 10)
+            c.drawString(left, y, title)
+            y -= 18
+            c.setFont("Helvetica", 8)
+            c.drawString(left, y, header[:180])
+            y -= 14
+            c.line(left, y, w - left, y)
+            y -= 10
+
+        def _draw_wrapped(text: str):
+            nonlocal y
+            chunks = [text[i : i + max_chars] for i in range(0, len(text), max_chars)] or [""]
+            for chunk in chunks:
+                c.drawString(left, y, chunk)
+                y -= line_height
+                if y < 40:
+                    _new_page()
+
         for _, row in df.iterrows():
             parts = [safe_str(row.get(col, "")) for col in cols]
             line = " | ".join(parts)
-            if len(line) > max_chars:
-                line = line[: max_chars - 3] + "..."
-            c.drawString(left, y, line)
-            y -= line_height
+            _draw_wrapped(line)
+            y -= 2
             if y < 40:
-                c.showPage()
-                y = top
-                c.setFont("Helvetica-Bold", 10)
-                c.drawString(left, y, title)
-                y -= 18
-                c.setFont("Helvetica", 8)
-                c.drawString(left, y, header[:180])
-                y -= 14
-                c.line(left, y, w - left, y)
-                y -= 10
+                _new_page()
 
         c.save()
         messagebox.showinfo("OK", f"{app.t('saved')} {fp}")
     except Exception as e:
         messagebox.showerror("Error", f"Failed to export PDF:\n{e}")
-

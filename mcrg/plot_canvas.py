@@ -118,6 +118,12 @@ def prepare_plot_data(app, g: dict, plot_key: str) -> dict:
             fv = app.filter_var.get()
             if fv == "Ideal":
                 df = df[df["Classification"] == "Ideal"]
+            elif fv == "Warning" and "Review_Status" in df.columns:
+                df = df[df["Review_Status"] == "Warning"]
+            elif fv in ("Error", "Discard") and "Review_Status" in df.columns:
+                df = df[df["Review_Status"] == "Error"]
+            elif fv == "Generated" and "SMILES_Final" in df.columns:
+                df = df[df["SMILES_Final"].fillna("").astype(str).str.len() > 0]
             elif fv == "Discard":
                 df = df[df["Classification"] != "Ideal"]
     except Exception:
@@ -136,9 +142,14 @@ def prepare_plot_data(app, g: dict, plot_key: str) -> dict:
     if plot_key.endswith("by Classification"):
         col = "Molecular_Weight" if plot_key.startswith("MW") else "LogP"
         ideal_s = _num_series(df[df["Classification"] == "Ideal"], col)
-        disc_s = _num_series(df[df["Classification"] != "Ideal"], col)
+        if "Review_Status" in df.columns:
+            warn_s = _num_series(df[df["Review_Status"] == "Warning"], col)
+            err_s = _num_series(df[df["Review_Status"] == "Error"], col)
+        else:
+            warn_s = _num_series(df[(df["Classification"] != "Ideal") & (df["SMILES_Final"].fillna("").astype(str).str.len() > 0)], col) if "SMILES_Final" in df.columns else _num_series(df[df["Classification"] != "Ideal"], col)
+            err_s = _num_series(df[(df["Classification"] != "Ideal") & (df["SMILES_Final"].fillna("").astype(str).str.len() == 0)], col) if "SMILES_Final" in df.columns else _num_series(df.iloc[0:0], col)
         feature_key = "MW" if plot_key.startswith("MW") else "LogP"
-        return {"ideal": ideal_s.tolist(), "discard": disc_s.tolist(), "feature_key": feature_key}
+        return {"ideal": ideal_s.tolist(), "warning": warn_s.tolist(), "error": err_s.tolist(), "discard": (warn_s.tolist() + err_s.tolist()), "feature_key": feature_key}
     if plot_key.endswith("Distribution"):
         col_map = {
             "Score Distribution": "Compatibility_%",
@@ -161,7 +172,7 @@ def prepare_plot_data(app, g: dict, plot_key: str) -> dict:
             import numpy as _np
 
             X = []
-            is_ideal = []
+            statuses = []
             for _, row in df.iterrows():
                 vals = []
                 ok = True
@@ -178,7 +189,10 @@ def prepare_plot_data(app, g: dict, plot_key: str) -> dict:
                 if not ok:
                     continue
                 X.append(vals)
-                is_ideal.append(str(row.get("Classification", "")) == "Ideal")
+                status = str(row.get("Review_Status", "") or "")
+                if not status:
+                    status = "Ideal" if str(row.get("Classification", "")) == "Ideal" else "Error"
+                statuses.append(status)
             if not X:
                 return {}
             X = _np.asarray(X, dtype=float)
@@ -188,7 +202,7 @@ def prepare_plot_data(app, g: dict, plot_key: str) -> dict:
             Z = (X - mu) / sd
             _U, _S, Vt = _np.linalg.svd(Z, full_matrices=False)
             comps = Z @ Vt.T
-            pts = [(float(comps[i, 0]), float(comps[i, 1]), bool(is_ideal[i])) for i in range(comps.shape[0])]
+            pts = [(float(comps[i, 0]), float(comps[i, 1]), statuses[i]) for i in range(comps.shape[0])]
             return {"points": pts, "method": "PCA_SVD", "columns": cols}
         except Exception:
             return {}
@@ -271,13 +285,18 @@ def draw_embedding_2d(app, g: dict, cv, cw: int, ch: int, m: int, data: dict):
     w = cw - 2 * m
     h = ch - 2 * m
     r = 2
-    for x, y, is_ideal in pts:
+    for x, y, status in pts:
         px = m + ((x - min_x) / span_x) * w
         py = ch - m - ((y - min_y) / span_y) * h
-        col = s.get("color_ideal", "#27ae60") if is_ideal else s.get("color_discard", "#c0392b")
+        if status == "Ideal" or status is True:
+            col = s.get("color_ideal", "#27ae60")
+        elif status == "Warning":
+            col = s.get("color_warning", "#d4a017")
+        else:
+            col = s.get("color_discard", "#c0392b")
         cv.create_oval(px - r, py - r, px + r, py + r, fill=col, outline=axc, width=0)
     leg_title = "Leyenda" if app.lang_var.get() == "Español" else "Legend"
-    draw_plot_legend(app, g, cv, cw, ch, m, leg_title, [(app.t("ideal"), s["color_ideal"]), (app.t("descartado"), s["color_discard"])])
+    draw_plot_legend(app, g, cv, cw, ch, m, leg_title, [(app.t("ideal"), s["color_ideal"]), (app.t("warning"), s.get("color_warning", "#d4a017")), (app.t("error"), s["color_discard"])])
 
 
 def draw_plot_legend(app, g: dict, cv, cw: int, ch: int, m: int, title: str, lines):
@@ -462,8 +481,9 @@ def draw_histogram(app, g: dict, cv, cw: int, ch: int, m: int, data: dict):
 def draw_class_hist(app, g: dict, cv, cw: int, ch: int, m: int, data: dict):
     PLOT_SETTINGS = g["PLOT_SETTINGS"]
     ideal = data.get("ideal", [])
-    discard = data.get("discard", [])
-    all_vals = ideal + discard
+    warning = data.get("warning", [])
+    error = data.get("error", [])
+    all_vals = ideal + warning + error
     if not all_vals:
         draw_empty_state(app, g, cv, "")
         return
@@ -471,16 +491,18 @@ def draw_class_hist(app, g: dict, cv, cw: int, ch: int, m: int, data: dict):
     min_v, max_v = min(all_vals), max(all_vals)
     bin_w = (max_v - min_v) / bins_count if max_v != min_v else 1.0
     i_counts = [sum(1 for v in ideal if min_v + i * bin_w <= v < min_v + (i + 1) * bin_w) for i in range(bins_count)]
-    d_counts = [sum(1 for v in discard if min_v + i * bin_w <= v < min_v + (i + 1) * bin_w) for i in range(bins_count)]
-    max_count = max(max(i_counts) or 1, max(d_counts) or 1)
+    w_counts = [sum(1 for v in warning if min_v + i * bin_w <= v < min_v + (i + 1) * bin_w) for i in range(bins_count)]
+    e_counts = [sum(1 for v in error if min_v + i * bin_w <= v < min_v + (i + 1) * bin_w) for i in range(bins_count)]
+    max_count = max(max(i_counts) or 1, max(w_counts) or 1, max(e_counts) or 1)
     s = PLOT_SETTINGS
     w = (cw - 2 * m) / bins_count
     for i in range(bins_count):
         x1 = m + i * w
         h_i = (i_counts[i] / max_count) * (ch - 2 * m)
-        h_d = (d_counts[i] / max_count) * (ch - 2 * m)
-        cv.create_rectangle(x1 + 1, ch - m - h_i, x1 + w / 2 - 2, ch - m, fill=s["color_ideal"], outline=s["axis_color"], width=1)
-        cv.create_rectangle(x1 + w / 2 + 1, ch - m - h_d, x1 + w - 1, ch - m, fill=s["color_discard"], outline=s["axis_color"], width=1)
+        h_w = (w_counts[i] / max_count) * (ch - 2 * m)
+        h_e = (e_counts[i] / max_count) * (ch - 2 * m)
+        cv.create_rectangle(x1 + 1, ch - m - h_i, x1 + w / 3 - 1, ch - m, fill=s["color_ideal"], outline=s["axis_color"], width=1)
+        cv.create_rectangle(x1 + w / 3, ch - m - h_w, x1 + 2 * w / 3 - 1, ch - m, fill=s.get("color_warning", "#d4a017"), outline=s["axis_color"], width=1)
+        cv.create_rectangle(x1 + 2 * w / 3, ch - m - h_e, x1 + w - 1, ch - m, fill=s["color_discard"], outline=s["axis_color"], width=1)
     leg_title = "Leyenda" if app.lang_var.get() == "Español" else "Legend"
-    draw_plot_legend(app, g, cv, cw, ch, m, leg_title, [(app.t("ideal"), s["color_ideal"]), (app.t("descartado"), s["color_discard"])])
-
+    draw_plot_legend(app, g, cv, cw, ch, m, leg_title, [(app.t("ideal"), s["color_ideal"]), (app.t("warning"), s.get("color_warning", "#d4a017")), (app.t("error"), s["color_discard"])])

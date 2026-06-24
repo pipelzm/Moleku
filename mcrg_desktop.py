@@ -77,6 +77,18 @@ except Exception:
     _run_mcr_mod = None
 
 try:
+    from mcrg.runtime_monitor import dependency_status as _dependency_status_mod
+    from mcrg.runtime_monitor import sample_usage as _sample_usage_mod
+except Exception:
+    _dependency_status_mod = None
+    _sample_usage_mod = None
+
+try:
+    from mcrg.catalog import MCR_CATALOGO as _MCR_CATALOGO_MOD
+except Exception:
+    _MCR_CATALOGO_MOD = None
+
+try:
     from mcrg.plots import export_plots_paper_ready as _export_plots_paper_ready_mod
 except Exception:
     _export_plots_paper_ready_mod = None
@@ -119,6 +131,7 @@ try:
     from mcrg.ui_admet import admet_predict_selected_local as _admet_predict_selected_local_mod
     from mcrg.ui_admet import admet_predict_visible_local as _admet_predict_visible_local_mod
     from mcrg.ui_admet import admet_predict_ideal_local as _admet_predict_ideal_local_mod
+    from mcrg.ui_admet import admet_predict_results_local as _admet_predict_results_local_mod
     from mcrg.ui_admet import admet_predict_pasted_local as _admet_predict_pasted_local_mod
     from mcrg.ui_admet import show_admet_predictions as _show_admet_predictions_mod
 except Exception:
@@ -128,6 +141,7 @@ except Exception:
     _admet_predict_selected_local_mod = None
     _admet_predict_visible_local_mod = None
     _admet_predict_ideal_local_mod = None
+    _admet_predict_results_local_mod = None
     _admet_predict_pasted_local_mod = None
     _show_admet_predictions_mod = None
 
@@ -215,11 +229,13 @@ try:
     from mcrg.ui_exports_simple import exp_csv as _exp_csv_mod
     from mcrg.ui_exports_simple import exp_xlsx as _exp_xlsx_mod
     from mcrg.ui_exports_simple import exp_pdf as _exp_pdf_mod
+    from mcrg.ui_exports_simple import exp_table as _exp_table_mod
 except Exception:
     _export_file_mod = None
     _exp_csv_mod = None
     _exp_xlsx_mod = None
     _exp_pdf_mod = None
+    _exp_table_mod = None
 
 try:
     from mcrg.ui_results_helpers import clear_results as _clear_results_mod
@@ -327,13 +343,13 @@ CL = {
     "bg": "#1e1e1e", "bg2": "#2b2b2b", "bg3": "#333333",
     "fg": "#d4d4d4", "dim": "#808080", "accent": "#e87a20",
     "accent2": "#c46a1a", "info": "#4fc3f7", "ideal": "#27ae60",
-    "discard": "#c0392b", "entry": "#3c3c3c", "border": "#555555",
+    "warning": "#d4a017", "discard": "#c0392b", "entry": "#3c3c3c", "border": "#555555",
     "grid": "#3a3a3a", "link": "#e87a20",
     "plot_bg": "#ffffff", "plot_fg": "#000000", "plot_border": "#000000"
 }
 
 PLOT_SETTINGS = {
-    "color_ideal": "#27ae60", "color_discard": "#c0392b",
+    "color_ideal": "#27ae60", "color_warning": "#d4a017", "color_discard": "#c0392b",
     "axis_color": "#000000", "grid_color": "#e0e0e0", "plot_bg": "#ffffff",
     "font_size": 12, "font_bold": True, "marker_size": 8,
     "line_width": 2.0, "axis_width": 2.5, "grid_width": 0.5,
@@ -437,8 +453,8 @@ MCR_CATALOGO = {
     },
     "GBB (3-CR)": {
         "componentes": ["Aldehídos", "Isocianuros", "2-Aminoazinas"],
-        "smarts": '[C:1]=[O:2].[C-:3]#[N+:4][C:5].[n:6]1[c:7][c:8][c:9][c:10][c:11]1[NH2:12]>>[C:5][NH:4][c:3]2[n:6]3[c:7][c:8][c:9][c:10][c:11]3[n:12][c:1]2',
-        "producto_ejemplo": "Cc1nc2ccccc2n1C(=O)c3ccccc3",
+        "smarts": '[C:1]=[O:2].[C-:3]#[N+:4][C:5].[n:6]1[c,n:7][c,n:8][c,n:9][c,n:10][c:11]1[NH2:12]>>[C:5][N+0H:4][c+0:3]1[c:1][n+0:12][c:11]2[c,n:10][c,n:9][c,n:8][c,n:7][n+0:6]21',
+        "producto_ejemplo": "CC(C)(C)Nc1c(-c2ccccc2)nc2ccccn12",
         "doi": "10.3390/ph15081009",
         "info_es": "Síntesis de imidazo[1,2-a]piridinas. Estructuras presentes en el fármaco Zolpidem.",
         "info_en": "Synthesis of imidazo[1,2-a]pyridines. Structures present in the drug Zolpidem."
@@ -454,9 +470,12 @@ MCR_CATALOGO = {
     },
     "Gewald (3-CR)": {
         "componentes": ["Cetonas", "Alfa-Cianoésteres"],
-        "smarts": '[CH2:1][C:2]=[O:3].[C:4](#N)[CH2:5][C:6](=[O:7])[O:8].[S:9]>>[c:1]1[c:2][s:9][c:4]([NH2])[c:5]1[C:6](=[O:7])[O:8]',
+        "smarts": '[C;H1,H2,H3:1][C:2]=[O:3].[C:4](#N)[C;H1,H2:5][C:6](=[O:7])[O:8].[S:9]>>[c+0:1]1[c+0:2][s+0:9][c+0:4]([N+0H2])[c+0:5]1[C:6](=[O:7])[O:8]',
+        "smarts_variants": [
+            "[C;H1,H2,H3:1][C:2]=[O:3].[C:4](#N)[CH2:5][C:6]#N.[S:9]>>[c+0:1]1[c+0:2][s+0:9][c+0:4]([N+0H2])[c+0:5]1[C:6]#N",
+        ],
         "opciones_centrales": {"Azufre (S8)": "[S]"},
-        "producto_ejemplo": "Cc1c(C#N)c(N)sc1C(=O)OC",
+        "producto_ejemplo": "CCOC(=O)c1cc(C)sc1N",
         "doi": "10.3390/ph15081009",
         "info_es": "Síntesis de 2-aminotiofenos trisustituidos. Núcleo heterocíclico clave.",
         "info_en": "Synthesis of trisubstituted 2-aminothiophenes. Key heterocyclic nucleus."
@@ -506,9 +525,9 @@ MCR_CATALOGO = {
 }
 
 # ════════════════════════════════════════════════════════════════════════
-# v1.0 (Core) reaction set
+# v1.1.0 (Core) reaction set
 # ════════════════════════════════════════════════════════════════════════
-# For the v1.0 release we ship three 3‑component MCRs only (per academic scope).
+# For the v1.1.0 release we ship three 3‑component MCRs only (per academic scope).
 # Ugi (4‑CR) and other reactions remain in the source tree for future packs/plugins.
 V1_ENABLED_REACTIONS = [
     "Biginelli (3-CR)",
@@ -516,8 +535,10 @@ V1_ENABLED_REACTIONS = [
     "Gewald (3-CR)",
 ]
 
-# Filter catalogue to the v1.0 core set.
-MCR_CATALOGO = {k: MCR_CATALOGO[k] for k in V1_ENABLED_REACTIONS if k in MCR_CATALOGO}
+# Filter catalogue to the v1.1.0 core set. Prefer the modular catalogue so all
+# entrypoints share a single active reaction definition.
+_catalog_source = _MCR_CATALOGO_MOD if isinstance(_MCR_CATALOGO_MOD, dict) else MCR_CATALOGO
+MCR_CATALOGO = {k: _catalog_source[k] for k in V1_ENABLED_REACTIONS if k in _catalog_source}
 
 # ════════════════════════════════════════════════════════════════════════
 # DATA HELPERS
@@ -604,7 +625,7 @@ def mol_to_photoimage(smiles, size=(300, 250)):
 # MAIN APPLICATION
 # ════════════════════════════════════════════════════════════════════════
 class MCRGApp:
-    # v1.0 core: no Chemical Space tab (future pack)
+    # v1.1.0 core: no Chemical Space tab (future pack)
     TAB_IDS = ["motor", "resultados", "admet", "guide", "acerca"]
     def __init__(self):
         if not _TK_READY:
@@ -613,7 +634,7 @@ class MCRGApp:
                 "Install Tk support or use the packaged Moleku application."
             )
         self.root = ctk.CTk() if HAS_CTK else tk.Tk()
-        self.root.title("Moleku v1.0"); self.root.geometry("950x700"); self.root.minsize(800, 600)
+        self.root.title("Moleku v1.1.0"); self.root.geometry("950x700"); self.root.minsize(800, 600)
         self.root.configure(bg=CL["bg"])
         
         self.lang_var = StringVar(value="English")
@@ -630,7 +651,7 @@ class MCRGApp:
         self.df_admet_view = None
         self._admet_mol_img_ref = None
 
-        # Feature gates for v1.0 core (keep heavy/optional exports as future packs)
+        # Feature gates for v1.1.0 core (keep heavy/optional exports as future packs)
         self.features = {
             "export_pdf": True,
             "custom_zip": False,
@@ -649,9 +670,12 @@ class MCRGApp:
         self._plot_canvases = []; self._plot_cache = {}
         self._updating_plots = False; self._last_plot_config = None
         self.total_generated = 0; self.total_discarded = 0
+        self._runtime_monitor_after = None
+        self._runtime_monitor_state = None
         
         threading.Thread(target=_load_heavy, daemon=True).start()
         self._build_ui()
+        self._start_runtime_monitor()
 
     def run(self):
         self.root.mainloop()
@@ -844,6 +868,11 @@ class MCRGApp:
             raise ImportError("mcrg.ui_exports_simple not available")
         return _exp_pdf_mod(self, globals())
 
+    def _exp_table(self):
+        if _exp_table_mod is None:
+            raise ImportError("mcrg.ui_exports_simple not available")
+        return _exp_table_mod(self, globals())
+
     def _export_pdf(self, df, fp):
         if _export_pdf_mod is None:
             raise ImportError("mcrg.export_pdf not available")
@@ -901,6 +930,34 @@ class MCRGApp:
             raise ImportError("mcrg.ui_clipboard_helpers not available")
         return _copy_to_clipboard_mod(self, globals(), text)
 
+    def _start_runtime_monitor(self):
+        def tick():
+            try:
+                if _dependency_status_mod is not None:
+                    dep_txt = _dependency_status_mod(chem_ready=bool(_CHEM_READY), pd_obj=pd, image_obj=Image)
+                else:
+                    dep_txt = "Runtime status unavailable"
+                if _sample_usage_mod is not None:
+                    perf_txt, self._runtime_monitor_state = _sample_usage_mod(self._runtime_monitor_state)
+                else:
+                    perf_txt = "CPU: n/a | RAM: n/a | GPU: n/a"
+                for name, txt in (("lbl_runtime_status", dep_txt), ("lbl_admet_runtime_status", dep_txt)):
+                    w = getattr(self, name, None)
+                    if w and hasattr(w, "configure"):
+                        (w.configure(text=txt) if HAS_CTK else w.config(text=txt))
+                for name, txt in (("lbl_perf_status", perf_txt), ("lbl_admet_perf_status", perf_txt)):
+                    w = getattr(self, name, None)
+                    if w and hasattr(w, "configure"):
+                        (w.configure(text=txt) if HAS_CTK else w.config(text=txt))
+            except Exception:
+                pass
+            try:
+                self._runtime_monitor_after = self.root.after(1000, tick)
+            except Exception:
+                self._runtime_monitor_after = None
+
+        tick()
+
     def _admet_copy_selected_smiles(self):
         if _admet_copy_selected_smiles_mod is None:
             raise ImportError("mcrg.ui_admet not available")
@@ -930,6 +987,11 @@ class MCRGApp:
         if _admet_predict_ideal_local_mod is None:
             raise ImportError("mcrg.ui_admet not available")
         return _admet_predict_ideal_local_mod(self, globals())
+
+    def _admet_predict_results_local(self):
+        if _admet_predict_results_local_mod is None:
+            raise ImportError("mcrg.ui_admet not available")
+        return _admet_predict_results_local_mod(self, globals())
 
     def _admet_predict_pasted_local(self, smiles_text: str):
         if _admet_predict_pasted_local_mod is None:

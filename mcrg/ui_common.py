@@ -12,6 +12,7 @@ def col_label(app, g: dict, col: str) -> str:
     # Core descriptor / status columns
     core_map = {
         "Compatibility_%": ("Compatibility %", "Compatibilidad %"),
+        "Review_Status": ("Review status", "Estado de revisión"),
         "Classification": ("Classification", "Clasificación"),
         "Failure_Reason": ("Failure reason", "Motivo de descarte"),
         "SMILES_Final": ("Final SMILES", "SMILES final"),
@@ -218,4 +219,3 @@ def build_ui(app, g: dict):
     app._update_labels()
     app._switch_tab("motor")
     app.root.after(1500, app._update_preview)
-

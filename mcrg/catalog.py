@@ -57,8 +57,8 @@ MCR_CATALOGO = {
     },
     "GBB (3-CR)": {
         "componentes": ["Aldehídos", "Isocianuros", "2-Aminoazinas"],
-        "smarts": "[C:1]=[O:2].[C-:3]#[N+:4][C:5].[n:6]1[c:7][c:8][c:9][c:10][c:11]1[NH2:12]>>[C:5][NH:4][c:3]2[n:6]3[c:7][c:8][c:9][c:10][c:11]3[n:12][c:1]2",
-        "producto_ejemplo": "Cc1nc2ccccc2n1C(=O)c3ccccc3",
+        "smarts": "[C:1]=[O:2].[C-:3]#[N+:4][C:5].[n:6]1[c,n:7][c,n:8][c,n:9][c,n:10][c:11]1[NH2:12]>>[C:5][N+0H:4][c+0:3]1[c:1][n+0:12][c:11]2[c,n:10][c,n:9][c,n:8][c,n:7][n+0:6]21",
+        "producto_ejemplo": "CC(C)(C)Nc1c(-c2ccccc2)nc2ccccn12",
         "doi": "10.3390/ph15081009",
         "info_es": "Síntesis de imidazo[1,2-a]piridinas. Estructuras presentes en el fármaco Zolpidem.",
         "info_en": "Synthesis of imidazo[1,2-a]pyridines. Structures present in the drug Zolpidem.",
@@ -74,9 +74,12 @@ MCR_CATALOGO = {
     },
     "Gewald (3-CR)": {
         "componentes": ["Cetonas", "Alfa-Cianoésteres"],
-        "smarts": "[CH2:1][C:2]=[O:3].[C:4](#N)[CH2:5][C:6](=[O:7])[O:8].[S:9]>>[c:1]1[c:2][s:9][c:4]([NH2])[c:5]1[C:6](=[O:7])[O:8]",
+        "smarts": "[C;H1,H2,H3:1][C:2]=[O:3].[C:4](#N)[C;H1,H2:5][C:6](=[O:7])[O:8].[S:9]>>[c+0:1]1[c+0:2][s+0:9][c+0:4]([N+0H2])[c+0:5]1[C:6](=[O:7])[O:8]",
+        "smarts_variants": [
+            "[C;H1,H2,H3:1][C:2]=[O:3].[C:4](#N)[CH2:5][C:6]#N.[S:9]>>[c+0:1]1[c+0:2][s+0:9][c+0:4]([N+0H2])[c+0:5]1[C:6]#N",
+        ],
         "opciones_centrales": {"Azufre (S8)": "[S]"},
-        "producto_ejemplo": "Cc1c(C#N)c(N)sc1C(=O)OC",
+        "producto_ejemplo": "CCOC(=O)c1cc(C)sc1N",
         "doi": "10.3390/ph15081009",
         "info_es": "Síntesis de 2-aminotiofenos trisustituidos. Núcleo heterocíclico clave.",
         "info_en": "Synthesis of trisubstituted 2-aminothiophenes. Key heterocyclic nucleus.",
@@ -124,4 +127,3 @@ MCR_CATALOGO = {
         "info_en": "Synthesis of hydantoins (imidazolidine-2,4-dione).",
     },
 }
-

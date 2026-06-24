@@ -1,4 +1,4 @@
-# Moleku v1.0 — Quick Start (Linux)
+# Moleku v1.1.0 — Quick Start (Linux)
 
 > Versión condensada. Para detalles, ver `INSTALL_LINUX.md` dentro del paquete.
 
@@ -14,9 +14,9 @@ cd Moleku-Linux-source
 ```bash
 # Si no tienes mamba/conda: https://github.com/conda-forge/miniforge/releases/latest
 
-mamba create -y -n moleku -c conda-forge python=3.11 rdkit pandas pillow numpy
+mamba create -y -n moleku -c conda-forge python=3.11 rdkit pandas pillow numpy openpyxl reportlab
 mamba activate moleku
-pip install customtkinter matplotlib openpyxl reportlab
+pip install customtkinter matplotlib
 # Opcional (predicciones ADMET locales):
 pip install admet-ai
 ```
@@ -48,6 +48,6 @@ Las plantillas ahora incluyen ejemplos de SMILES en estilos distintos (canónico
 Click en **▶ Start virtual generation** y luego ve a la pestaña **Results**.
 
 ## 5. Tips
-- **Filtros y export**: con la tabla en `Ideal`, `All` o `Discard`, los botones **Export CSV / Sheets / PDF** producen un archivo limpio (solo las filas del filtro activo).
-- **3D ZIP** siempre exporta conformeros de los Ideal.
+- **Filtros y export**: la tabla separa `Ideal`, `Warning`, `Error`, `Generated` y `All`. `Warning` significa que existe `SMILES_Final`, pero no paso el criterio/umbral seleccionado.
+- **3D ZIP** permite exportar `Ideal` o `Ideal + Warning` (todas las filas con `SMILES_Final`), bajo criterio del usuario.
 - **ADMET (local)** requiere `pip install admet-ai`; sin él, usa **Abrir ADMET-IA (web)**.

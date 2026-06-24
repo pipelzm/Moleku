@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from .run_counts import format_run_counter
+
 
 def refresh_slots(app, g: dict):
     tk = g["tk"]
@@ -105,14 +107,14 @@ def clear_motor_inputs(app, g: dict):
             except Exception:
                 pass
             app.lbl_status.configure(text="")
-            app.lbl_combinations.configure(text="📊 Total: 0 | ✅ Ideal: 0 | ❌ Discarded: 0")
+            app.lbl_combinations.configure(text=format_run_counter(None, None))
         else:
             try:
                 app.pbar["value"] = 0
             except Exception:
                 pass
             app.lbl_status.config(text="")
-            app.lbl_combinations.config(text="📊 Total: 0 | ✅ Ideal: 0 | ❌ Discarded: 0")
+            app.lbl_combinations.config(text=format_run_counter(None, None))
     except Exception:
         pass
 
@@ -141,4 +143,3 @@ def browse_file(app, g: dict, component: str):
     if fp:
         app.file_paths[component] = fp
         app.file_svars[component].set(fp)
-
