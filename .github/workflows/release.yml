@@ -10,7 +10,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [macos-latest]
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -68,13 +68,6 @@ jobs:
           chmod +x scripts/smoke_test_mac_app.sh
           scripts/smoke_test_mac_app.sh "dist/Moleku.app"
 
-      - name: Package artifact (Windows zip)
-        if: runner.os == 'Windows'
-        shell: bash -l {0}
-        run: |
-          cd dist
-          7z a "Moleku-${{ runner.os }}.zip" "Moleku"
-
       - name: (Optional) Codesign + notarize (macOS)
         if: runner.os == 'macOS' && env.MACOS_SIGN_IDENTITY != ''
         shell: bash -l {0}
@@ -113,29 +106,11 @@ jobs:
           cd dist
           ditto -c -k --sequesterRsrc --keepParent "Moleku.app" "Moleku-${{ runner.os }}.zip"
 
-      - name: Package artifact (Linux zip)
-        if: runner.os == 'Linux'
-        shell: bash -l {0}
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y zip curl
-          cd dist
-          zip -r "Moleku-${{ runner.os }}.zip" "Moleku"
-
-      - name: Build AppImage (Linux)
-        if: runner.os == 'Linux'
-        shell: bash -l {0}
-        run: |
-          chmod +x scripts/build_appimage.sh
-          scripts/build_appimage.sh
-
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: Moleku-${{ runner.os }}
-          path: |
-            dist/Moleku-${{ runner.os }}.zip
-            dist/Moleku-Linux.AppImage
+          path: dist/Moleku-${{ runner.os }}.zip
           if-no-files-found: error
 
   release:
@@ -153,7 +128,4 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            artifacts/**/Moleku-Windows.zip
             artifacts/**/Moleku-macOS.zip
-            artifacts/**/Moleku-Linux.zip
-            artifacts/**/Moleku-Linux.AppImage
