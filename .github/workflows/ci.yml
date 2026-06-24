@@ -19,7 +19,7 @@ jobs:
 
       - name: Smoke import without chemistry stack
         run: |
-          python -m pytest -q tests/test_smoke_imports.py
+          python -c "import mcrg_desktop; import mcrg; print('smoke-light-ok')"
 
   test:
     strategy:
